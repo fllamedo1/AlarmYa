@@ -27,13 +27,26 @@ jobs:
         run: flutter pub get
 
       - name: Compilar iOS (sin firmar)
-        run: flutter build ios --release --no-codesign
+        run: |
+          flutter build ios --release --no-codesign --config-only
+          xcodebuild \
+            -workspace ios/Runner.xcworkspace \
+            -scheme Runner \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath build/ios \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            DEVELOPMENT_TEAM="" \
+            build
 
       - name: Empaquetar IPA
         run: |
+          APP_PATH=$(find build/ios -path "*/Release-iphoneos/Runner.app" -print -quit)
+          mkdir -p build/ios/iphoneos/Payload
+          cp -r "$APP_PATH" build/ios/iphoneos/Payload/
           cd build/ios/iphoneos
-          mkdir -p Payload
-          cp -r Runner.app Payload/
           zip -qry AlarmYa-unsigned.ipa Payload
 
       - name: Subir IPA como artifact

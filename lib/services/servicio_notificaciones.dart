@@ -34,11 +34,6 @@ class ServicioNotificaciones {
   bool get vigilanteActivo => _vigilante != null;
   int _ticks = 0;
 
-  String get _archivoSonido {
-    final s = ServicioAjustes.instancia.sonido;
-    return s == 'alarm' ? 'klaxon' : s;
-  }
-
   /// Cada cuánto vuelve a sonar el "bip" hasta que se abre la misión.
   static const _reintentoCadaSec = 30;
 
@@ -58,9 +53,9 @@ class ServicioNotificaciones {
     await programarSnooze(idAlarma);
   }
 
-  NotificationDetails get _detalles => NotificationDetails(
+  NotificationDetails _detalles(Alarma alarma) => NotificationDetails(
         iOS: DarwinNotificationDetails(
-          sound: '$_archivoSonido.wav',
+          sound: '${alarma.sonido}.wav',
           interruptionLevel: InterruptionLevel.timeSensitive,
           categoryIdentifier: _categoriaAlarma,
           presentAlert: true,
@@ -281,6 +276,11 @@ class ServicioNotificaciones {
   /// vuelve a abrir la misión.
   Future<void> programarSnooze(String idAlarma) async {
     final ajustes = ServicioAjustes.instancia;
+    final alarmas = await Almacenamiento.instancia.cargar();
+    final alarma = alarmas.firstWhere(
+      (a) => a.id == idAlarma,
+      orElse: () => Alarma(id: idAlarma, hora: 0, minuto: 0),
+    );
     final ahora = tz.TZDateTime.now(tz.local);
     final fecha = ahora.add(Duration(minutes: ajustes.snoozeMin));
     final payload = jsonEncode(<String, dynamic>{'id': idAlarma});
@@ -289,7 +289,7 @@ class ServicioNotificaciones {
       title: '⏰ Pospuesta',
       body: 'Suena en ${ajustes.snoozeMin} min…',
       fecha: fecha,
-      detalles: _detalles,
+      detalles: _detalles(alarma),
       payload: payload,
     );
   }
@@ -312,7 +312,7 @@ class ServicioNotificaciones {
         title: titulo,
         body: cuerpo,
         fecha: fecha,
-        detalles: _detalles,
+        detalles: _detalles(a),
         payload: payload,
       );
       await _programarReintentos(a, fecha, 0, titulo, cuerpo, payload);
@@ -337,7 +337,7 @@ class ServicioNotificaciones {
           title: titulo,
           body: cuerpo,
           fecha: fecha,
-          detalles: _detalles,
+          detalles: _detalles(a),
           payload: payload,
           semanal: true,
         );
@@ -389,7 +389,7 @@ class ServicioNotificaciones {
         title: titulo,
         body: cuerpo,
         fecha: fecha,
-        detalles: _detalles,
+        detalles: _detalles(a),
         payload: payload,
       );
     }

@@ -5,6 +5,13 @@ enum TipoMision { ninguna, matematica, sacudir }
 enum Dificultad { facil, media, dificil }
 
 class Alarma {
+  static const sonidos = <String, String>{
+    'klaxon': 'Klaxon (bip doble)',
+    'campana': 'Campana',
+    'beep': 'Beep digital',
+    'radar': 'Radar',
+  };
+
   Alarma({
     required this.id,
     this.titulo = 'Alarma',
@@ -16,6 +23,8 @@ class Alarma {
     this.cuentasMatematicas = 1,
     this.sacudidasRequeridas = 10,
     this.permitirPosponer = true,
+    this.sonido = 'klaxon',
+    this.volumen = 1.0,
     this.dias = const <int>{},
     this.omitirHastaIso,
   });
@@ -30,6 +39,8 @@ class Alarma {
   int cuentasMatematicas;
   int sacudidasRequeridas;
   bool permitirPosponer;
+  String sonido;
+  double volumen;
   /// Días de la semana en que se repite. 1 = lunes ... 7 = domingo.
   /// Vacío = alarma de una sola vez.
   Set<int> dias;
@@ -59,6 +70,8 @@ class Alarma {
         'cuentasMatematicas': cuentasMatematicas,
         'sacudidas': sacudidasRequeridas,
         'permitirPosponer': permitirPosponer,
+        'sonido': sonido,
+        'volumen': volumen,
         'dias': dias.toList()..sort(),
         if (omitirHastaIso != null) 'omitirHasta': omitirHastaIso,
       };
@@ -84,6 +97,10 @@ class Alarma {
         permitirPosponer: m['permitirPosponer'] is bool
             ? m['permitirPosponer'] as bool
             : true,
+        sonido: sonidos.containsKey(m['sonido'])
+            ? m['sonido'] as String
+            : 'klaxon',
+        volumen: _doubleDe(m['volumen'], 1.0).clamp(0.1, 1.0).toDouble(),
         omitirHastaIso: m['omitirHasta'] == null
             ? null
             : (m['omitirHasta'] as String),
@@ -99,6 +116,12 @@ class Alarma {
     if (v is int) return v;
     if (v is num) return v.toInt();
     if (v is String) return int.tryParse(v) ?? def;
+    return def;
+  }
+
+  static double _doubleDe(Object? v, double def) {
+    if (v is num) return v.toDouble();
+    if (v is String) return double.tryParse(v) ?? def;
     return def;
   }
 

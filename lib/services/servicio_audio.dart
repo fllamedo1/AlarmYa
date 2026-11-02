@@ -4,6 +4,7 @@ import 'package:audioplayers/audioplayers.dart';
 
 import 'registro.dart';
 import 'servicio_ajustes.dart';
+import '../models/alarma.dart';
 
 /// Reproduce el sonido de alarma en bucle hasta completar la misión.
 /// Usa la categoría `playback` de iOS: suena aunque el iPhone esté
@@ -34,19 +35,17 @@ class ServicioAudio {
         ),
       );
 
-  Future<void> sonar() async {
+  Future<void> sonar(Alarma alarma) async {
     if (_sonando) return;
     _sonando = true;
     final ajustes = ServicioAjustes.instancia;
-    final archivo = ajustes.sonido == 'alarm'
-        ? 'klaxon'
-        : ajustes.sonido; // compatibilidad con versiones viejas
+    final archivo = alarma.sonido;
     try {
       await _player.setAudioContext(_contexto());
       await _player.setReleaseMode(ReleaseMode.loop);
       // Arranque directo: si subirVolumen está activo empieza en 0.35 y sube;
       // si no, va a 1.0 de golpe. Nunca fuerza 1.0 antes de tocar.
-      var nivelInicial = ajustes.subirVolumen ? 0.5 : 1.0;
+      var nivelInicial = alarma.volumen * (ajustes.subirVolumen ? 0.5 : 1.0);
       await _player.setVolume(nivelInicial);
       await _player.play(AssetSource('sounds/$archivo.wav'));
       Registro.instancia.add('Audio: alarma sonando ($archivo, vol $nivelInicial)');
@@ -61,7 +60,7 @@ class ServicioAudio {
               t.cancel();
               return;
             }
-            nivel = (nivel + 0.08).clamp(0.0, 1.0);
+            nivel = (nivel + alarma.volumen * 0.08).clamp(0.0, alarma.volumen);
             await _player.setVolume(nivel);
             if (nivel >= 1.0) t.cancel();
           },

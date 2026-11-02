@@ -23,6 +23,8 @@ class _PantallaEdicionState extends State<PantallaEdicion> {
   late int _cuentasMatematicas;
   late int _sacudidas;
   late bool _permitirPosponer;
+  late String _sonido;
+  late double _volumen;
   late Set<int> _dias;
 
   @override
@@ -37,6 +39,8 @@ class _PantallaEdicionState extends State<PantallaEdicion> {
     _cuentasMatematicas = a?.cuentasMatematicas ?? 1;
     _sacudidas = a?.sacudidasRequeridas ?? 10;
     _permitirPosponer = a?.permitirPosponer ?? true;
+    _sonido = a?.sonido ?? 'klaxon';
+    _volumen = a?.volumen ?? 1.0;
     _dias = Set<int>.from(a?.dias ?? <int>{});
   }
 
@@ -71,6 +75,8 @@ class _PantallaEdicionState extends State<PantallaEdicion> {
     a.cuentasMatematicas = _cuentasMatematicas;
     a.sacudidasRequeridas = _sacudidas;
     a.permitirPosponer = _permitirPosponer;
+    a.sonido = _sonido;
+    a.volumen = _volumen;
     a.dias = Set<int>.from(_dias);
     // Guardar una alarma editada reactiva la ocurrencia elegida, incluso si
     // antes se había usado "Omitir próxima alarma".
@@ -269,6 +275,67 @@ class _PantallaEdicionState extends State<PantallaEdicion> {
                     ),
                   )
                 : null,
+          ),
+          const SizedBox(height: 16),
+          const Padding(
+            padding: EdgeInsets.only(left: 6, bottom: 8),
+            child: Text(
+              'SONIDO DE ESTA ALARMA',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF9A9A9A),
+                letterSpacing: 0.5,
+              ),
+            ),
+          ),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(18, 8, 18, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  DropdownButtonFormField<String>(
+                    value: _sonido,
+                    decoration: const InputDecoration(
+                      labelText: 'Tono',
+                      border: InputBorder.none,
+                    ),
+                    items: [
+                      for (final entry in Alarma.sonidos.entries)
+                        DropdownMenuItem(
+                          value: entry.key,
+                          child: Text(entry.value),
+                        ),
+                    ],
+                    onChanged: (v) {
+                      if (v != null) setState(() => _sonido = v);
+                    },
+                  ),
+                  Text(
+                    'Volumen: ${(_volumen * 100).round()}%',
+                    style: const TextStyle(fontSize: 13, color: Color(0xFF666666)),
+                  ),
+                  SliderTheme(
+                    data: SliderTheme.of(context).copyWith(
+                      activeTrackColor: const Color(0xFFFFB300),
+                      thumbColor: const Color(0xFFFFB300),
+                    ),
+                    child: Slider(
+                      min: 0.1,
+                      max: 1.0,
+                      divisions: 9,
+                      value: _volumen,
+                      onChanged: (v) => setState(() => _volumen = v),
+                    ),
+                  ),
+                  const Text(
+                    'El volumen durante la alarma usa este valor. Con el iPhone bloqueado, iOS usa el volumen de notificaciones del sistema.',
+                    style: TextStyle(fontSize: 11.5, color: Color(0xFF999999)),
+                  ),
+                ],
+              ),
+            ),
           ),
           const SizedBox(height: 16),
           Card(

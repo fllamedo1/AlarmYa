@@ -47,4 +47,32 @@ void main() {
       isNull,
     );
   });
+
+  test('persiste el sonido y volumen propios de cada alarma', () {
+    final original = Alarma(
+      id: 'alarma-sonido',
+      hora: 8,
+      minuto: 15,
+      sonido: 'radar',
+      volumen: 0.4,
+    );
+
+    final restaurada = Alarma.decode(original.encode());
+
+    expect(restaurada.sonido, 'radar');
+    expect(restaurada.volumen, closeTo(0.4, 0.001));
+  });
+
+  test('corrige valores inválidos de sonido y volumen antiguos', () {
+    final alarma = Alarma.fromMap({
+      'id': 'alarma-antigua',
+      'hora': 8,
+      'minuto': 15,
+      'sonido': 'inexistente',
+      'volumen': 4,
+    });
+
+    expect(alarma.sonido, 'klaxon');
+    expect(alarma.volumen, 1.0);
+  });
 }

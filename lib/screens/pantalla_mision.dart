@@ -59,7 +59,7 @@ class _PantallaMisionState extends State<PantallaMision> {
     }
     _alarma = a;
 
-    await ServicioAudio.instancia.sonar();
+    await ServicioAudio.instancia.sonar(a);
 
     if (!mounted) return;
     setState(() => _cargando = false);

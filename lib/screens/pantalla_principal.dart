@@ -5,24 +5,27 @@ import '../services/almacenamiento.dart';
 import '../services/servicio_notificaciones.dart';
 import 'pantalla_edicion.dart';
 
-const _diasTexto = <int, String>{
-  1: 'Lun',
-  2: 'Mar',
-  3: 'Mié',
-  4: 'Jue',
-  5: 'Vie',
-  6: 'Sáb',
-  7: 'Dom',
-};
+const _diasCortos = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
 
 String _textoMision(TipoMision m) {
   switch (m) {
     case TipoMision.matematica:
-      return '🧮 Misión matemática';
+      return 'Matemática';
     case TipoMision.sacudir:
-      return '📱 Misión sacudir';
+      return 'Sacudir';
     case TipoMision.ninguna:
-      return '';
+      return 'Sin misión';
+  }
+}
+
+IconData _iconoMision(TipoMision m) {
+  switch (m) {
+    case TipoMision.matematica:
+      return Icons.calculate_outlined;
+    case TipoMision.sacudir:
+      return Icons.vibration_outlined;
+    case TipoMision.ninguna:
+      return Icons.alarm;
   }
 }
 
@@ -55,9 +58,7 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
 
   Future<void> _editarAlarma([Alarma? alarma]) async {
     final resultado = await Navigator.of(context).push<Alarma>(
-      MaterialPageRoute(
-        builder: (_) => PantallaEdicion(alarma: alarma),
-      ),
+      MaterialPageRoute(builder: (_) => PantallaEdicion(alarma: alarma)),
     );
     if (resultado == null) return;
     final i = _alarmas.indexWhere((a) => a.id == resultado.id);
@@ -69,96 +70,189 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
     await _aplicarCambios();
   }
 
-  Future<void> _borrar(Alarma a, int index) async {
-    _alarmas.removeAt(index);
-    await _aplicarCambios();
-  }
-
   @override
   Widget build(BuildContext context) {
-    final sinAlarmas = _alarmas.isEmpty;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('AlarmYa ⏰'),
-        backgroundColor: Colors.transparent,
+        title: const Text('Alarm'),
       ),
-      body: sinAlarmas
+      body: _alarmas.isEmpty
           ? const Center(
               child: Padding(
                 padding: EdgeInsets.all(24),
                 child: Text(
-                  'No hay alarmas todavía.\nToca + para crear la primera.',
+                  'No hay alarmas todavía.\n\nTocá el botón + para crear la primera.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 16),
+                  style: TextStyle(
+                      fontSize: 15, color: Colors.black38, height: 1.5),
                 ),
               ),
             )
-          : ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          : ListView.separated(
+              padding: const EdgeInsets.fromLTRB(12, 4, 12, 96),
               itemCount: _alarmas.length,
-              itemBuilder: (context, i) {
-                final a = _alarmas[i];
-                return Dismissible(
-                  key: Key(a.id),
-                  background: Container(
-                    color: Theme.of(context).colorScheme.errorContainer,
-                    alignment: Alignment.centerRight,
-                    padding: const EdgeInsets.only(right: 24),
-                    child: const Icon(Icons.delete),
-                  ),
-                  direction: DismissDirection.endToStart,
-                  onDismissed: (_) => _borrar(a, i),
-                  child: Card(
-                    child: ListTile(
-                      onTap: () => _editarAlarma(a),
-                      title: Text(
-                        a.horaTexto,
-                        style: const TextStyle(
-                          fontSize: 34,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            a.titulo.isEmpty ? 'Alarma' : a.titulo,
-                            style: const TextStyle(fontSize: 14),
-                          ),
-                          if (a.dias.isNotEmpty)
-                            Text(
-                              a.dias.map((d) => _diasTexto[d] ?? '').join(' '),
-                              style: const TextStyle(
-                                  fontSize: 12, color: Colors.white70),
-                            ),
-                          if (a.mision != TipoMision.ninguna)
-                            Text(
-                              _textoMision(a.mision),
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: Colors.amberAccent,
-                              ),
-                            ),
-                        ],
-                      ),
-                      trailing: Switch(
-                        value: a.activa,
-                        onChanged: (v) {
-                          a.activa = v;
-                          _aplicarCambios();
-                        },
-                      ),
-                      leading: const Icon(Icons.access_time),
-                    ),
-                  ),
-                );
-              },
+              separatorBuilder: (_, __) => const SizedBox(height: 8),
+              itemBuilder: (context, i) => _TarjetaAlarma(
+                alarma: _alarmas[i],
+                onToggle: (v) {
+                  _alarmas[i].activa = v;
+                  _aplicarCambios();
+                },
+                onOpen: () => _editarAlarma(_alarmas[i]),
+                onDelete: () {
+                  _alarmas.removeAt(i);
+                  _aplicarCambios();
+                },
+              ),
             ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _editarAlarma(),
+        backgroundColor: const Color(0xFFFFB300),
+        foregroundColor: Colors.white,
+        elevation: 3,
+        shape: const CircleBorder(),
         tooltip: 'Nueva alarma',
-        child: const Icon(Icons.add),
+        child: const Icon(Icons.add, size: 32),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+    );
+  }
+}
+
+class _TarjetaAlarma extends StatelessWidget {
+  const _TarjetaAlarma({
+    required this.alarma,
+    required this.onToggle,
+    required this.onOpen,
+    required this.onDelete,
+  });
+
+  final Alarma alarma;
+  final ValueChanged<bool> onToggle;
+  final VoidCallback onOpen;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    final activo = alarma.activa;
+    final colorHora = activo ? const Color(0xFF222222) : const Color(0xFF9E9E9E);
+    final texto =
+        alarma.titulo.isEmpty ? 'Alarma' : (alarma.titulo);
+
+    return Dismissible(
+      key: Key(alarma.id),
+      direction: DismissDirection.endToStart,
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 24),
+        decoration: BoxDecoration(
+          color: const Color(0xFFE57373),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: const Icon(Icons.delete_outline, color: Colors.white),
+      ),
+      onDismissed: (_) => onDelete(),
+      child: Card(
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: onOpen,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        alarma.horaTexto,
+                        style: TextStyle(
+                          fontSize: 40,
+                          height: 1.0,
+                          fontWeight: FontWeight.w600,
+                          color: colorHora,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        texto,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFF888888),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          for (var d = 1; d <= 7; d++)
+                            Padding(
+                              padding: const EdgeInsets.only(right: 5),
+                              child: _ChipDia(
+                                letra: _diasCortos[d - 1],
+                                activo: alarma.dias.contains(d) && activo,
+                              ),
+                            ),
+                          const SizedBox(width: 6),
+                          Icon(
+                            _iconoMision(alarma.mision),
+                            size: 16,
+                            color: activo
+                                ? const Color(0xFFFFB300)
+                                : const Color(0xFFBBBBBB),
+                          ),
+                          const SizedBox(width: 3),
+                          Text(
+                            _textoMision(alarma.mision),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: activo
+                                  ? const Color(0xFFE5A100)
+                                  : const Color(0xFFBBBBBB),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Switch(
+                  value: alarma.activa,
+                  onChanged: onToggle,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ChipDia extends StatelessWidget {
+  const _ChipDia({required this.letra, required this.activo});
+
+  final String letra;
+  final bool activo;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 21,
+      height: 21,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: activo ? const Color(0xFFFFB300) : const Color(0xFFEEEEEE),
+      ),
+      child: Text(
+        letra,
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+          color: activo ? Colors.white : const Color(0xFFAAAAAA),
+        ),
       ),
     );
   }

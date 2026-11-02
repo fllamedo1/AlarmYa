@@ -7,9 +7,11 @@ import 'package:sensors_plus/sensors_plus.dart';
 import '../models/alarma.dart';
 import '../services/almacenamiento.dart';
 import '../services/servicio_audio.dart';
+import '../services/servicio_notificaciones.dart';
 
-/// Pantalla a pantalla completa que aparece cuando suena una alarma.
-/// El sonido se detiene solo al completar la misión configurada.
+/// Pantalla a pantalla completa estilo Alarmy: fondo amarillo a pantalla
+/// completa, hora gigante y misión en tarjeta blanca. El sonido en bucle se
+/// detiene solo al completar la misión (o poner en pausa 5 minutos).
 class PantallaMision extends StatefulWidget {
   const PantallaMision({super.key, required this.idAlarma});
 
@@ -21,20 +23,24 @@ class PantallaMision extends StatefulWidget {
 
 class _PantallaMisionState extends State<PantallaMision> {
   Alarma? _alarma;
+  bool _cargando = true;
+
   // Matemática
   String _pregunta = '';
   int _respuesta = 0;
-  final _controlEntrada = TextEditingController();
+  String _entrada = '';
   String _mensaje = '';
-  bool _resolviendo = false;
+  bool _comprobando = false;
+
   // Sacudir
   int _sacudidas = 0;
-  bool _enSwing = false;
-  DateTime _ultimaSacudida = DateTime.fromMillisecondsSinceEpoch(0);
+  bool _enMovimiento = false;
+  DateTime _ultimaDeteccion = DateTime.fromMillisecondsSinceEpoch(0);
   StreamSubscription<AccelerometerEvent>? _sub;
 
-  static const _thresholdoSwing = 14.0;
-  static const _umbralPausaMs = 180;
+  static const _umbralMovimiento = 14.0;
+  static const _umbralPausa = 11.0;
+  static const _pausaMs = 180;
 
   @override
   void initState() {
@@ -44,38 +50,42 @@ class _PantallaMisionState extends State<PantallaMision> {
 
   Future<void> _cargarAlarma() async {
     final alarmas = await Almacenamiento.instancia.cargar();
-    final a = alarmas.where((x) => x.id == widget.idAlarma).firstOrNull;
-    if (mounted) {
-      setState(() {
-        _alarma = a ?? (Alarma(id: widget.idAlarma, hora: 0, minuto: 0));
-      });
-      await ServicioAudio.instancia.sonar();
-      if (_alarma!.mision == TipoMision.sacudir) _escucharSensor();
-      if (_alarma!.mision == TipoMision.matematica) _nuevaPregunta();
+    Alarma a;
+    try {
+      a = alarmas.firstWhere((x) => x.id == widget.idAlarma);
+    } catch (_) {
+      a = Alarma(id: widget.idAlarma, hora: 0, minuto: 0);
     }
+    _alarma = a;
+
+    await ServicioAudio.instancia.sonar();
+
+    if (!mounted) return;
+    setState(() => _cargando = false);
+
+    if (a.mision == TipoMision.sacudir) _escucharSensor();
+    if (a.mision == TipoMision.matematica) _nuevaPregunta();
   }
 
   void _escucharSensor() {
     _sub = accelerometerEventStream().listen((e) {
       final mag = sqrt(e.x * e.x + e.y * e.y + e.z * e.z);
       final ahora = DateTime.now();
-      if (!_enSwing &&
-          mag > _thresholdoSwing &&
-          ahora.difference(_ultimaSacudida).inMilliseconds > _umbralPausaMs) {
-        _enSwing = true;
-        _ultimaSacudida = ahora;
+      if (!_enMovimiento &&
+          mag > _umbralMovimiento &&
+          ahora.difference(_ultimaDeteccion).inMilliseconds > _pausaMs) {
+        _enMovimiento = true;
+        _ultimaDeteccion = ahora;
         _sacudidas++;
         if (mounted) setState(() {});
         if (_sacudidas >= (_alarma?.sacudidasRequeridas ?? 10)) {
           _completar();
         }
-      } else if (mag < _thetauoPausaLibre) {
-        _enSwing = false;
+      } else if (mag < _umbralPausa) {
+        _enMovimiento = false;
       }
     });
   }
-
-  static const _thetauoPausaLibre = 11.0;
 
   void _nuevaPregunta() {
     final r = Random();
@@ -83,7 +93,7 @@ class _PantallaMisionState extends State<PantallaMision> {
       case Dificultad.facil:
         final a = r.nextInt(20) + 2;
         final b = r.nextInt(20) + 2;
-        _pregunta = '$a + $b = ?';
+        _pregunta = '$a + $b';
         _respuesta = a + b;
         break;
       case Dificultad.media:
@@ -91,12 +101,12 @@ class _PantallaMisionState extends State<PantallaMision> {
         final a = r.nextInt(12) + 3;
         final b = r.nextInt(12) + 3;
         if (modo == 0) {
-          _pregunta = '$a × $b = ?';
+          _pregunta = '$a × $b';
           _respuesta = a * b;
         } else {
           final mayor = max(a, b);
           final menor = min(a, b);
-          _pregunta = '$mayor - $menor = ?';
+          _pregunta = '$mayor - $menor';
           _respuesta = mayor - menor;
         }
         break;
@@ -104,24 +114,23 @@ class _PantallaMisionState extends State<PantallaMision> {
         final a = r.nextInt(12) + 2;
         final b = r.nextInt(12) + 2;
         final c = r.nextInt(40) + 10;
-        _pregunta = '$a × $b + $c = ?';
+        _pregunta = '$a × $b + $c';
         _respuesta = a * b + c;
         break;
     }
   }
 
-  Future<void> _resolver() async {
-    if (_resolviendo) return;
-    setState(() => _resolviendo = true);
-    final entrada = int.tryParse(_controlEntrada.text.trim());
-
-    await Future<void>.delayed(const Duration(milliseconds: 300));
+  Future<void> _comprobar() async {
+    if (_comprobando) return;
+    setState(() => _comprobando = true);
+    final entrada = int.tryParse(_entrada);
+    await Future<void>.delayed(const Duration(milliseconds: 250));
     if (entrada != _respuesta) {
       if (mounted) {
         setState(() {
           _mensaje = 'Incorrecto. Otra cuenta…';
-          _resolviendo = false;
-          _controlEntrada.clear();
+          _comprobando = false;
+          _entrada = '';
         });
       }
       _nuevaPregunta();
@@ -136,10 +145,15 @@ class _PantallaMisionState extends State<PantallaMision> {
     if (mounted) Navigator.of(context).pop();
   }
 
+  Future<void> _posponer() async {
+    await ServicioAudio.instancia.parar();
+    await ServicioNotificaciones.instancia.programarSnooze(widget.idAlarma, 5);
+    if (mounted) Navigator.of(context).pop();
+  }
+
   @override
   void dispose() {
     _sub?.cancel();
-    _controlEntrada.dispose();
     super.dispose();
   }
 
@@ -147,39 +161,57 @@ class _PantallaMisionState extends State<PantallaMision> {
   Widget build(BuildContext context) {
     final ahora = DateTime.now();
     final a = _alarma;
-    final horaTexto =
-        '${_d2(a?.hora ?? ahora.hour)}:${_d2(a?.minuto ?? ahora.minute)}';
+    final hora = a?.hora ?? ahora.hour;
+    final minuto = a?.minuto ?? ahora.minute;
     final mision = a?.mision ?? TipoMision.ninguna;
     final titulo = a?.titulo ?? '';
 
     return Scaffold(
       body: Container(
+        width: double.infinity,
+        height: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFF7C1B1B), Color(0xFF3A0D0D)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFFFFC93C), Color(0xFFFF8F00)],
           ),
         ),
         child: SafeArea(
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const SizedBox(height: 16),
+              const Spacer(),
               Text(
-                titulo.isEmpty ? 'Alarma' : titulo,
-                style: const TextStyle(color: Colors.white70, fontSize: 18),
+                titulo.isEmpty ? 'AlarmYa' : titulo,
+                style: TextStyle(
+                  color: Colors.black.withOpacity(0.55),
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-              Text(horaTexto,
-                  style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 72,
-                      fontWeight: FontWeight.w300)),
+              const SizedBox(height: 4),
+              Text(
+                '${_d2(hora)}:${_d2(minuto)}',
+                style: TextStyle(
+                  color: Colors.black.withOpacity(0.85),
+                  fontSize: 88,
+                  height: 1.0,
+                  fontWeight: FontWeight.w300,
+                ),
+              ),
               const SizedBox(height: 8),
-              Text('Misión',
-                  style: TextStyle(color: Colors.amberAccent, fontSize: 16)),
-              const SizedBox(height: 24),
-              Flexible(
+              Text(
+                'Suena el despertador',
+                style: TextStyle(
+                  color: Colors.black.withOpacity(0.55),
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const Spacer(),
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 16, vertical: 12),
                 child: _cuerpoMision(mision),
               ),
             ],
@@ -192,9 +224,15 @@ class _PantallaMisionState extends State<PantallaMision> {
   static String _d2(int v) => v.toString().padLeft(2, '0');
 
   Widget _cuerpoMision(TipoMision mision) {
+    if (_cargando) {
+      return const Padding(
+        padding: EdgeInsets.all(40),
+        child: CircularProgressIndicator(color: Colors.white),
+      );
+    }
     switch (mision) {
       case TipoMision.ninguna:
-        return _botonDetener('Presioná para detener');
+        return _misionBoton();
       case TipoMision.matematica:
         return _misionMatematica();
       case TipoMision.sacudir:
@@ -202,96 +240,221 @@ class _PantallaMisionState extends State<PantallaMision> {
     }
   }
 
-  Widget _botonDetener([String texto = 'Detener']) {
-    return Center(
+  Widget _misionBoton() {
+    return Container(
+      padding: const EdgeInsets.all(22),
+      decoration: _cajaBlanca,
       child: Column(
-        mainAxisSize: MainAxisSize.min,
         children: [
-          ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
-            ),
-            onPressed: _completar,
-            icon: const Icon(Icons.stop, size: 32),
-            label: const Text('DETENER', style: TextStyle(fontSize: 22)),
+          const Text(
+            'Para apagar la alarma',
+            style: TextStyle(fontSize: 14, color: Color(0xFF777777)),
           ),
-          const SizedBox(height: 12),
-          Text(texto, style: const TextStyle(color: Colors.white60)),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            height: 62,
+            child: FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFFFFB300),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              onPressed: _completar,
+              child: const Text(
+                'DETENER',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1,
+                ),
+              ),
+            ),
+          ),
+          _botonPosponer(),
         ],
       ),
     );
   }
 
   Widget _misionMatematica() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              _mensaje.isNotEmpty ? _mensaje : 'Resolvé para apagar',
-              style: const TextStyle(color: Colors.white70),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              _pregunta,
-              style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 44,
-                  fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 200),
-              child: TextField(
-                controller: _controlEntrada,
-                keyboardType: const TextInputType.numberWithOptions(
-                    signed: false, decimal: false),
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 28, color: Colors.white),
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  filled: true,
-                  fillColor: Colors.black26,
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: _cajaBlanca,
+      child: Column(
+        children: [
+          _mensaje.isNotEmpty
+              ? Text(
+                  _mensaje,
+                  style: const TextStyle(
+                      color: Color(0xFFD32F2F), fontWeight: FontWeight.w600),
+                )
+              : const Text(
+                  'Resolvé para apagar la alarma',
+                  style: TextStyle(fontSize: 14, color: Color(0xFF777777)),
                 ),
-                onSubmitted: (_) => _resolver(),
+          const SizedBox(height: 12),
+          Text(
+            '${_pregunta} = ${_entrada.isEmpty ? '?' : _entrada}',
+            style: const TextStyle(
+              fontSize: 34,
+              fontWeight: FontWeight.w800,
+              color: Color(0xFF222222),
+            ),
+          ),
+          const SizedBox(height: 12),
+          for (final fila in _teclasGrupos)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                for (final tecla in fila)
+                  _Tecla(
+                    etiqueta: tecla,
+                    onPressed: () => _tocarTecla(tecla),
+                  ),
+              ],
+            ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            height: 52,
+            child: FilledButton(
+              onPressed: _comprobando ? null : _comprobar,
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFFFFB300),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+              child: const Text(
+                'COMPROBAR',
+                style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1),
               ),
             ),
-            const SizedBox(height: 12),
-            FilledButton(
-              onPressed: _resolviendo ? null : _resolver,
-              child: const Text('Comprobar'),
-            ),
-          ],
-        ),
+          ),
+          _botonPosponer(),
+        ],
       ),
     );
+  }
+
+  static const _teclasGrupos = [
+    ['1', '2', '3'],
+    ['4', '5', '6'],
+    ['7', '8', '9'],
+    ['C', '0', '⌫'],
+  ];
+
+  void _tocarTecla(String tecla) {
+    setState(() {
+      switch (tecla) {
+        case 'C':
+          _entrada = '';
+          break;
+        case '⌫':
+          if (_entrada.isNotEmpty) {
+            _entrada = _entrada.substring(0, _entrada.length - 1);
+          }
+          break;
+        default:
+          if (_entrada.length < 6) _entrada += tecla;
+      }
+    });
   }
 
   Widget _misionSacudir() {
     final req = _alarma?.sacudidasRequeridas ?? 10;
     final progreso = (_sacudidas / req).clamp(0.0, 1.0);
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              'Sacudí el teléfono hasta apagarla',
-              style: TextStyle(color: Colors.white70),
+    return Container(
+      padding: const EdgeInsets.all(22),
+      decoration: _cajaBlanca,
+      child: Column(
+        children: [
+          const Icon(Icons.vibration, size: 42, color: Color(0xFFFFB300)),
+          const SizedBox(height: 8),
+          const Text(
+            'Sacudí el teléfono',
+            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 12),
+          Text('$_sacudidas / $req',
+              style: const TextStyle(
+                  fontSize: 44,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF222222))),
+          const SizedBox(height: 14),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(6),
+            child: LinearProgressIndicator(
+              value: progreso,
+              minHeight: 12,
+              backgroundColor: const Color(0xFFEEEEEE),
+              valueColor:
+                  const AlwaysStoppedAnimation<Color>(Color(0xFFFFB300)),
             ),
-            const SizedBox(height: 16),
-            Text('$_sacudidas / $req',
-                style:
-                    const TextStyle(fontSize: 48, fontWeight: FontWeight.bold, color: Colors.white)),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: 260,
-              child: LinearProgressIndicator(value: progreso, minHeight: 10),
-            ),
-          ],
+          ),
+          _botonPosponer(),
+        ],
+      ),
+    );
+  }
+
+  Widget _botonPosponer() {
+    return TextButton(
+      onPressed: _posponer,
+      child: const Text(
+        'Posponer 5 min',
+        style: TextStyle(
+          color: Color(0xFF999999),
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+
+  static const _cajaBlanca = BoxDecoration(
+    color: Colors.white,
+    borderRadius: BorderRadius.all(Radius.circular(22)),
+    boxShadow: [
+      BoxShadow(
+        color: Color(0x33000000),
+        blurRadius: 16,
+        offset: Offset(0, 8),
+      ),
+    ],
+  );
+}
+
+class _Tecla extends StatelessWidget {
+  const _Tecla({required this.etiqueta, required this.onPressed});
+
+  final String etiqueta;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(4),
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFFF4F4F6),
+          foregroundColor: const Color(0xFF333333),
+          elevation: 0,
+          padding: EdgeInsets.zero,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          minimumSize: const Size(60, 46),
+        ),
+        child: Text(
+          etiqueta,
+          style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w700),
         ),
       ),
     );

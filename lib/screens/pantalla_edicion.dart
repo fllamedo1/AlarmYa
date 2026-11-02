@@ -46,6 +46,7 @@ class _PantallaEdicionState extends State<PantallaEdicion> {
     final t = await showTimePicker(
       context: context,
       initialTime: TimeOfDay(hour: _hora, minute: _minuto),
+      initialEntryMode: TimePickerEntryMode.dial,
     );
     if (t != null) {
       setState(() {
@@ -71,128 +72,344 @@ class _PantallaEdicionState extends State<PantallaEdicion> {
 
   @override
   Widget build(BuildContext context) {
+    final nueva = widget.alarma == null;
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.alarma == null ? 'Nueva alarma' : 'Editar alarma'),
+        title: Text(nueva ? 'Nueva alarma' : 'Editar alarma'),
         actions: [
           TextButton(
             onPressed: _guardar,
-            child: const Text('Guardar',
-                style: TextStyle(color: Colors.white, fontSize: 16)),
+            child: const Text(
+              'Guardar',
+              style: TextStyle(
+                color: Color(0xFFFFB300),
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
           ),
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(12, 4, 12, 32),
         children: [
-          // Hora
-          InkWell(
-            onTap: _elegirHora,
-            child: Center(
-              child: Text(
-                '${_hora.toString().padLeft(2, '0')}:${_minuto.toString().padLeft(2, '0')}',
-                style: const TextStyle(
-                  fontSize: 72,
-                  fontWeight: FontWeight.w300,
+          // ── Hora ──
+          Card(
+            child: InkWell(
+              borderRadius: BorderRadius.circular(16),
+              onTap: _elegirHora,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+                child: Column(
+                  children: [
+                    Text(
+                      '${_hora.toString().padLeft(2, '0')}:${_minuto.toString().padLeft(2, '0')}',
+                      style: const TextStyle(
+                        fontSize: 58,
+                        height: 1.0,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF222222),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    const Text(
+                      'Toca para cambiar la hora',
+                      style: TextStyle(
+                          fontSize: 12, color: Color(0xFFAAAAAA)),
+                    ),
+                  ],
                 ),
               ),
             ),
           ),
-          const SizedBox(height: 8),
-          TextField(
-            controller: _titulo,
-            decoration: const InputDecoration(
-              labelText: 'Título',
-              hintText: 'Ej: Despertar',
-              border: OutlineInputBorder(),
-            ),
-          ),
-          const SizedBox(height: 24),
-          // Misiones
-          const Text('Para apagar la alarma…',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          SegmentedButton<TipoMision>(
-            segments: const [
-              ButtonSegment(
-                value: TipoMision.ninguna,
-                icon: Icon(Icons.stop),
-                label: Text('Botón'),
-              ),
-              ButtonSegment(
-                value: TipoMision.matematica,
-                icon: Icon(Icons.calculate),
-                label: Text('Matemática'),
-              ),
-              ButtonSegment(
-                value: TipoMision.sacudir,
-                icon: Icon(Icons.vibration),
-                label: Text('Sacudir'),
-              ),
-            ],
-            selected: {_mision},
-            onSelectionChanged: (s) => setState(() => _mision = s.first),
-          ),
-          if (_mision == TipoMision.matematica) ...[
-            const SizedBox(height: 16),
-            const Text('Dificultad'),
-            const SizedBox(height: 8),
-            SegmentedButton<Dificultad>(
-              segments: const [
-                ButtonSegment(value: Dificultad.facil, label: Text('Fácil')),
-                ButtonSegment(value: Dificultad.media, label: Text('Media')),
-                ButtonSegment(
-                    value: Dificultad.dificil, label: Text('Difícil')),
-              ],
-              selected: {_dificultad},
-              onSelectionChanged: (s) =>
-                  setState(() => _dificultad = s.first),
-            ),
-          ],
-          if (_mision == TipoMision.sacudir) ...[
-            const SizedBox(height: 16),
-            Text('Sacudidas necesarias: $_sacudidas'),
-            Slider(
-              min: 5,
-              max: 40,
-              divisions: 7,
-              value: _sacudidas.toDouble(),
-              onChanged: (v) => setState(() => _sacudidas = v.round()),
-            ),
-          ],
-          const SizedBox(height: 24),
-          // Días de repetición
-          const Text('Repetir los días',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            children: [
-              for (var i = 1; i <= 7; i++)
-                FilterChip(
-                  selected: _dias.contains(i),
-                  label: Text(_diasNombre[i - 1]),
-                  onSelected: (sel) => setState(() {
-                    sel ? _dias.add(i) : _dias.remove(i);
-                  }),
+          const SizedBox(height: 10),
+          // ── Título ──
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(18, 4, 18, 12),
+              child: TextField(
+                controller: _titulo,
+                decoration: const InputDecoration(
+                  border: InputBorder.none,
+                  hintText: 'Nombre de la alarma (ej: Despertar)',
+                  hintStyle: TextStyle(color: Color(0xFFBBBBBB), fontSize: 14),
                 ),
-            ],
-          ),
-          if (_dias.isEmpty)
-            const Padding(
-              padding: EdgeInsets.only(top: 8),
-              child: Text(
-                'Sin días seleccionados: suena una sola vez en la próxima hora.',
-                style: TextStyle(fontSize: 12, color: Colors.white54),
+                style: const TextStyle(fontSize: 15),
               ),
             ),
-          const SizedBox(height: 32),
-          FilledButton.icon(
+          ),
+          const SizedBox(height: 16),
+          // ── Misión ──
+          const Padding(
+            padding: EdgeInsets.only(left: 6, bottom: 8),
+            child: Text(
+              'PARA APAGAR LA ALARMA',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF9A9A9A),
+                letterSpacing: 0.5,
+              ),
+            ),
+          ),
+          _OpcionMision(
+            titulo: 'Botón',
+            descripcion: 'Toca Detener y listos.',
+            icono: Icons.touch_app_outlined,
+            seleccionada: _mision == TipoMision.ninguna,
+            onTap: () => setState(() => _mision = TipoMision.ninguna),
+          ),
+          const SizedBox(height: 8),
+          _OpcionMision(
+            titulo: 'Misión matemática',
+            descripcion: 'Resolvé una cuenta para detenerla.',
+            icono: Icons.calculate_outlined,
+            seleccionada: _mision == TipoMision.matematica,
+            onTap: () => setState(() => _mision = TipoMision.matematica),
+            child: _mision == TipoMision.matematica
+                ? Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: SegmentedButton<Dificultad>(
+                      style: ButtonStyle(
+                        side: WidgetStateProperty.all(
+                          const BorderSide(color: Color(0xFFFFB300)),
+                        ),
+                      ),
+                      segments: const [
+                        ButtonSegment(value: Dificultad.facil, label: Text('Fácil')),
+                        ButtonSegment(value: Dificultad.media, label: Text('Media')),
+                        ButtonSegment(
+                            value: Dificultad.dificil, label: Text('Difícil')),
+                      ],
+                      selected: {_dificultad},
+                      selectedIcon: const Icon(Icons.check),
+                      onSelectionChanged: (s) =>
+                          setState(() => _dificultad = s.first),
+                    ),
+                  )
+                : null,
+          ),
+          const SizedBox(height: 8),
+          _OpcionMision(
+            titulo: 'Sacudir el teléfono',
+            descripcion: 'Sacudí el iPhone hasta apagarla.',
+            icono: Icons.vibration_outlined,
+            seleccionada: _mision == TipoMision.sacudir,
+            onTap: () => setState(() => _mision = TipoMision.sacudir),
+            child: _mision == TipoMision.sacudir
+                ? Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Sacudidas necesarias: $_sacudidas',
+                          style: const TextStyle(
+                              fontSize: 13, color: Color(0xFF666666)),
+                        ),
+                        SliderTheme(
+                          data: SliderTheme.of(context).copyWith(
+                            activeTrackColor: const Color(0xFFFFB300),
+                            thumbColor: const Color(0xFFFFB300),
+                          ),
+                          child: Slider(
+                            min: 5,
+                            max: 40,
+                            divisions: 7,
+                            value: _sacudidas.toDouble(),
+                            onChanged: (v) =>
+                                setState(() => _sacudidas = v.round()),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : null,
+          ),
+          const SizedBox(height: 16),
+          // ── Repetir ──
+          const Padding(
+            padding: EdgeInsets.only(left: 6, bottom: 8),
+            child: Text(
+              'REPETIR',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF9A9A9A),
+                letterSpacing: 0.5,
+              ),
+            ),
+          ),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      for (var d = 1; d <= 7; d++)
+                        _ChipDiaGrande(
+                          letra: _diasNombre[d - 1],
+                          activo: _dias.contains(d),
+                          onTap: () => setState(() {
+                            _dias.contains(d)
+                                ? _dias.remove(d)
+                                : _dias.add(d);
+                          }),
+                        ),
+                    ],
+                  ),
+                  if (_dias.isEmpty) ...[
+                    const SizedBox(height: 10),
+                    const Text(
+                      'Sin días tocados: suena una sola vez en la próxima hora.',
+                      style: TextStyle(fontSize: 12, color: Color(0xFFAAAAAA)),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 28),
+          FilledButton(
             onPressed: _guardar,
-            icon: const Icon(Icons.save),
-            label: const Text('Guardar alarma'),
+            style: FilledButton.styleFrom(
+              minimumSize: const Size.fromHeight(54),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+            ),
+            child: Text(
+              nueva ? 'CREAR ALARMA' : 'GUARDAR CAMBIOS',
+              style: const TextStyle(fontSize: 16, letterSpacing: 0.5),
+            ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _OpcionMision extends StatelessWidget {
+  const _OpcionMision({
+    required this.titulo,
+    required this.descripcion,
+    required this.icono,
+    required this.seleccionada,
+    required this.onTap,
+    this.child,
+  });
+
+  final String titulo;
+  final String descripcion;
+  final IconData icono;
+  final bool seleccionada;
+  final VoidCallback onTap;
+  final Widget? child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      color: seleccionada ? const Color(0xFFFFFBF0) : Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: seleccionada ? const Color(0xFFFFB300) : Colors.transparent,
+          width: 1.6,
+        ),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    icono,
+                    color: seleccionada
+                        ? const Color(0xFFFFB300)
+                        : const Color(0xFF999999),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          titulo,
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: seleccionada
+                                ? const Color(0xFF222222)
+                                : const Color(0xFF444444),
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          descripcion,
+                          style: const TextStyle(
+                              fontSize: 12.5, color: Color(0xFF999999)),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(
+                    seleccionada
+                        ? Icons.check_circle
+                        : Icons.radio_button_unchecked,
+                    color: seleccionada
+                        ? const Color(0xFFFFB300)
+                        : const Color(0xFFCCCCCC),
+                  ),
+                ],
+              ),
+              if (child != null) child!,
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ChipDiaGrande extends StatelessWidget {
+  const _ChipDiaGrande({
+    required this.letra,
+    required this.activo,
+    required this.onTap,
+  });
+
+  final String letra;
+  final bool activo;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(24),
+      onTap: onTap,
+      child: Container(
+        width: 36,
+        height: 36,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: activo ? const Color(0xFFFFB300) : const Color(0xFFEEEEEE),
+        ),
+        child: Text(
+          letra,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            color: activo ? Colors.white : const Color(0xFF999999),
+          ),
+        ),
       ),
     );
   }

@@ -18,6 +18,8 @@ class AlarmYaApp extends StatefulWidget {
 }
 
 class _AlarmYaAppState extends State<AlarmYaApp> {
+  final navigatorKey = GlobalKey<NavigatorState>();
+
   @override
   void initState() {
     super.initState();
@@ -32,8 +34,6 @@ class _AlarmYaAppState extends State<AlarmYaApp> {
     ServicioNotificaciones.instancia.pedirPermiso();
   }
 
-  final navigatorKey = GlobalKey<NavigatorState>();
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -41,13 +41,56 @@ class _AlarmYaAppState extends State<AlarmYaApp> {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
-        brightness: Brightness.dark,
-        colorScheme: ColorScheme.dark(
-          primary: const Color(0xFFD32F2F),
-          secondary: Colors.amberAccent,
-          surface: const Color(0xFF1E1E1E),
+        brightness: Brightness.light,
+        colorScheme: const ColorScheme.light(
+          primary: Color(0xFFFFB300),      // amarillo/naranja Alarmy
+          secondary: Color(0xFFFF9800),
+          surface: Colors.white,
         ),
-        scaffoldBackgroundColor: const Color(0xFF121212),
+        scaffoldBackgroundColor: const Color(0xFFF4F4F6),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Color(0xFFF4F4F6),
+          surfaceTintColor: Colors.transparent,
+          elevation: 0,
+          centerTitle: false,
+          titleTextStyle: TextStyle(
+            color: Color(0xFF222222),
+            fontSize: 22,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        cardTheme: CardThemeData(
+          color: Colors.white,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          margin: EdgeInsets.zero,
+        ),
+        switchTheme: SwitchThemeData(
+          thumbColor: WidgetStateProperty.resolveWith(
+            (s) => s.contains(WidgetState.selected)
+                ? const Color(0xFFFFB300)
+                : Colors.white,
+          ),
+          trackColor: WidgetStateProperty.resolveWith(
+            (s) => s.contains(WidgetState.selected)
+                ? const Color(0xFFFFB300)
+                : const Color(0xFFDDDDDD),
+          ),
+          trackOutlineColor: WidgetStateProperty.resolveWith(
+            (s) => s.contains(WidgetState.selected)
+                ? const Color(0xFFFFB300)
+                : const Color(0xFFBBBBBB),
+          ),
+        ),
+        filledButtonTheme: FilledButtonThemeData(
+          style: FilledButton.styleFrom(
+            backgroundColor: const Color(0xFFFFB300),
+            foregroundColor: Colors.white,
+            textStyle: const TextStyle(fontWeight: FontWeight.w700),
+          ),
+        ),
       ),
       navigatorKey: navigatorKey,
       home: const PantallaPrincipal(),

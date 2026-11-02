@@ -102,6 +102,30 @@ class ServicioNotificaciones {
     await reprogramar(alarmas);
   }
 
+  /// Pospone la alarma X minutos: una notificación única con el mismo
+  /// payload (al tocarla vuelve a abrir la misión).
+  Future<void> programarSnooze(String idAlarma, int minutos) async {
+    final ahora = tz.TZDateTime.now(tz.local);
+    final fecha = ahora.add(Duration(minutes: minutos));
+    final detalles = const NotificationDetails(
+      iOS: DarwinNotificationDetails(
+        sound: 'alarm.wav',
+        interruptionLevel: InterruptionLevel.timeSensitive,
+        presentAlert: true,
+        presentSound: true,
+      ),
+    );
+    final payload = jsonEncode(<String, dynamic>{'id': idAlarma});
+    await _notificar(
+      id: (DateTime.now().millisecondsSinceEpoch ~/ 1000).hashCode.abs(),
+      title: '⏰ Pospuesta',
+      body: 'Posponer otra vez…',
+      fecha: fecha,
+      detalles: detalles,
+      payload: payload,
+    );
+  }
+
   Future<void> _programar(Alarma a) async {
     final ahora = tz.TZDateTime.now(tz.local);
 

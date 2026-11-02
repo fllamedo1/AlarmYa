@@ -64,6 +64,8 @@ class ServicioNotificaciones {
           interruptionLevel: InterruptionLevel.timeSensitive,
           categoryIdentifier: _categoriaAlarma,
           presentAlert: true,
+          presentBanner: true,
+          presentList: true,
           presentSound: true,
         ),
       );
@@ -85,6 +87,11 @@ class ServicioNotificaciones {
         requestAlertPermission: true,
         requestBadgePermission: true,
         requestSoundPermission: true,
+        defaultPresentAlert: true,
+        defaultPresentBadge: true,
+        defaultPresentBanner: true,
+        defaultPresentList: true,
+        defaultPresentSound: true,
         notificationCategories: [
           DarwinNotificationCategory(
             _categoriaAlarma,

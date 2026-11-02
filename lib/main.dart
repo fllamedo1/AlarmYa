@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 
 import 'screens/pantalla_mision.dart';
 import 'screens/pantalla_principal.dart';
+import 'services/registro.dart';
 import 'services/servicio_ajustes.dart';
 import 'services/servicio_notificaciones.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  Registro.instancia.inicioSesion = DateTime.now();
+  Registro.instancia.add('App iniciada');
   await ServicioNotificaciones.instancia.inicializar();
   await ServicioAjustes.instancia.cargar();
   runApp(const AlarmYaApp());
@@ -39,7 +42,9 @@ class _AlarmYaAppState extends State<AlarmYaApp> {
       ServicioNotificaciones.instancia.alAbrirMision?.call(pendiente);
     }
     // Pedir permiso de notificaciones al primer arranque.
-    ServicioNotificaciones.instancia.pedirPermiso();
+    ServicioNotificaciones.instancia.pedirPermiso().then((ok) {
+      Registro.instancia.add('Permiso notificaciones: $ok');
+    });
   }
 
   @override

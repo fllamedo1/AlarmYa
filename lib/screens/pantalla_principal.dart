@@ -5,6 +5,7 @@ import '../services/almacenamiento.dart';
 import '../services/servicio_audio.dart';
 import '../services/servicio_notificaciones.dart';
 import 'pantalla_ajustes.dart';
+import 'pantalla_diagnostico.dart';
 import 'pantalla_edicion.dart';
 
 const _diasCortos = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
@@ -113,6 +114,15 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
       appBar: AppBar(
         title: const Text('Alarm'),
         actions: [
+          IconButton(
+            tooltip: 'Diagnóstico',
+            icon: const Icon(Icons.monitor_heart_outlined),
+            color: const Color(0xFF666666),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                  builder: (_) => const PantallaDiagnostico()),
+            ),
+          ),
           IconButton(
             tooltip: 'Ajustes',
             icon: const Icon(Icons.settings_outlined),

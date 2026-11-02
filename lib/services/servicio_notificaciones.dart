@@ -8,6 +8,7 @@ import 'package:timezone/data/latest_all.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
 import 'almacenamiento.dart';
+import 'registro.dart';
 import 'servicio_ajustes.dart';
 import '../models/alarma.dart';
 
@@ -28,6 +29,10 @@ class ServicioNotificaciones {
   Timer? _vigilante;
   final _disparadas = <String>{}; // claves 'id@fechaISO' ya sonadas
   String? _misionPendiente; // si la app arrancó fría tocando una notificación
+  DateTime? ultimoChequeo;
+  DateTime? get ultimoChequeoEn => ultimoChequeo;
+  bool get vigilanteActivo => _vigilante != null;
+  int _ticks = 0;
 
   /// Cada cuánto vuelve a sonar el "bip" hasta que se abre la misión.
   static const _reintentoCadaSec = 30;
@@ -104,15 +109,29 @@ class ServicioNotificaciones {
     _listo = true;
   }
 
-  /// Enciende el vigilante: revisa cada 10 s si toca una alarma y, si sí,
+  /// Enciende el vigilante: revisa cada 5 s si toca una alarma y, si sí,
   /// la dispara desde la app (sonido real, ignore silencio/No Molestar).
   void iniciarVigilante() {
     if (_vigilante != null) return;
     _vigilante = Timer.periodic(_vigilanciaCada, (_) => _vigilar());
+    Registro.instancia.add('Vigilante: activo (cada ${_vigilanciaCada.inSeconds}s)');
+  }
+
+  /// Estado de permisos de notificación (para diagnóstico).
+  Future<NotificationsEnabledOptions?> permisoEstado() async {
+    return _plugin
+        .resolvePlatformSpecificImplementation<
+            IOSFlutterLocalNotificationsPlugin>()
+        ?.checkPermissions();
   }
 
   Future<void> _vigilar() async {
     if (!_listo) return;
+    ultimoChequeo = DateTime.now();
+    _ticks++;
+    if (_ticks % 12 == 0) {
+      Registro.instancia.add('Vigilante: vivo (1 min)');
+    }
     try {
       final alarmas = await Almacenamiento.instancia.cargar();
       final ahora = DateTime.now();
@@ -120,26 +139,35 @@ class ServicioNotificaciones {
         if (!a.activa) continue;
         final prox = proximaDe(a, ahora);
         if (prox == null) continue;
-        if (!ahora.isBefore(prox) &&
-            ahora.difference(prox) < _vigilanciaCada * 2) {
-          final clave = '${a.id}@${prox.toIso8601String()}';
-          if (_disparadas.contains(clave)) continue;
-          _disparadas.add(clave);
-          if (_disparadas.length > 200) {
-            _disparadas.remove(_disparadas.first);
-          }
-          debugPrint('Vigilante: disparando alarma ${a.id}');
-          // Re-arma las próximas ocurrencias (descarta la ya sonada).
-          await reprogramar(alarmas);
-          // Abrir la misión inmediatamente.
-          if (alAbrirMision != null) {
-            alAbrirMision?.call(a.id);
-          } else {
-            _misionPendiente = a.id;
-          }
+        // Ventana normal: hasta 10 s tarde. Ventana tardía: si iOS tuvo
+        // la app suspendida, igual disparamos si el usuario desbloquea
+        // dentro de los 30 min siguientes a la hora programada.
+        final tarde = ahora.difference(prox);
+        final enVentana = !ahora.isBefore(prox) &&
+            (tarde < _vigilanciaCada * 2 ||
+                tarde < const Duration(minutes: 30));
+        if (!enVentana) continue;
+        final clave = '${a.id}@${prox.toIso8601String()}';
+        if (_disparadas.contains(clave)) continue;
+        _disparadas.add(clave);
+        if (_disparadas.length > 200) {
+          _disparadas.remove(_disparadas.first);
+        }
+        final retraso = tarde.inSeconds;
+        Registro.instancia.add(
+            'Vigilante: DISPARO alarma ${a.id} (retraso ${retraso}s)');
+        // Re-arma las próximas ocurrencias (descarta la ya sonada).
+        await reprogramar(alarmas);
+        // Abrir la misión inmediatamente.
+        if (alAbrirMision != null) {
+          alAbrirMision?.call(a.id);
+        } else {
+          _misionPendiente = a.id;
         }
       }
-    } catch (_) {}
+    } catch (e) {
+      Registro.instancia.add('Vigilante: ERROR -> $e');
+    }
   }
 
   void _alTocar(NotificationResponse r) async {
@@ -147,6 +175,8 @@ class ServicioNotificaciones {
         ? ''
         : ((jsonDecode(r.payload!) as Map<String, dynamic>)['id'] ?? '')
             .toString();
+    Registro.instancia.add(
+        'Notificación tocada: acción=${r.actionId ?? "abrir"} id=$id');
     if (id.isEmpty) return;
     switch (r.actionId) {
       case 'posponer':

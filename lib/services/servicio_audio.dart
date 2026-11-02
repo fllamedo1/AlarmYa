@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:audioplayers/audioplayers.dart';
 
+import 'registro.dart';
 import 'servicio_ajustes.dart';
 
 /// Reproduce el sonido de alarma en bucle hasta completar la misión.
@@ -23,6 +24,9 @@ class ServicioAudio {
   bool _sonando = false;
   bool _guardianActivo = false;
   Timer? _subidaVolumen;
+
+  bool get guardianActivo => _guardianActivo;
+  bool get sonando => _sonando;
 
   AudioContext _contexto() => AudioContext(
         iOS: AudioContextIOS(
@@ -46,6 +50,7 @@ class ServicioAudio {
       var nivelInicial = ajustes.subirVolumen ? 0.5 : 1.0;
       await _player.setVolume(nivelInicial);
       await _player.play(AssetSource('sounds/$archivo.wav'));
+      Registro.instancia.add('Audio: alarma sonando ($archivo, vol $nivelInicial)');
 
       if (ajustes.subirVolumen) {
         // Sube de 0.5 a 1.0 en ~7 s
@@ -63,8 +68,9 @@ class ServicioAudio {
           },
         );
       }
-    } catch (_) {
+    } catch (e) {
       _sonando = false;
+      Registro.instancia.add('Audio: ERROR al sonar -> $e');
     }
   }
 
@@ -89,8 +95,10 @@ class ServicioAudio {
       await _keeper.setReleaseMode(ReleaseMode.loop);
       await _keeper.setVolume(1.0); // el track es silencio puro
       await _keeper.play(AssetSource('sounds/silencio.wav'));
-    } catch (_) {
+      Registro.instancia.add('Guardián: activo');
+    } catch (e) {
       _guardianActivo = false;
+      Registro.instancia.add('Guardián: ERROR -> $e');
     }
   }
 
@@ -98,6 +106,7 @@ class ServicioAudio {
     if (!_guardianActivo) return;
     try {
       await _keeper.stop();
+      Registro.instancia.add('Guardián: detenido');
     } finally {
       _guardianActivo = false;
     }

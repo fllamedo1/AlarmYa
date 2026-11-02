@@ -15,6 +15,7 @@ class Alarma {
     this.dificultad = Dificultad.media,
     this.sacudidasRequeridas = 10,
     this.dias = const <int>{},
+    this.omitirHastaIso,
   });
 
   String id;
@@ -29,6 +30,17 @@ class Alarma {
   /// Vacío = alarma de una sola vez.
   Set<int> dias;
 
+  /// "Omitir próxima alarma": fecha (ISO) hasta la que no suena.
+  /// Con alarmas semanales, se salta la próxima ocurrencia y el resto
+  /// sigue sonando automáticamente.
+  String? omitirHastaIso;
+
+  DateTime? get omitirHasta =>
+      omitirHastaIso == null ? null : DateTime.tryParse(omitirHastaIso!);
+
+  set omitirHasta(DateTime? d) =>
+      omitirHastaIso = d?.toIso8601String();
+
   String get horaTexto =>
       '${hora.toString().padLeft(2, '0')}:${minuto.toString().padLeft(2, '0')}';
 
@@ -42,6 +54,7 @@ class Alarma {
         'dificultad': Dificultad.values.indexOf(dificultad),
         'sacudidas': sacudidasRequeridas,
         'dias': dias.toList()..sort(),
+        if (omitirHastaIso != null) 'omitirHasta': omitirHastaIso,
       };
 
   factory Alarma.fromMap(Map<String, dynamic> m) => Alarma(
@@ -61,6 +74,9 @@ class Alarma {
             ? Dificultad.values[m['dificultad'] as int]
             : Dificultad.media,
         sacudidasRequeridas: _intDe(m['sacudidas'], 10).clamp(3, 60),
+        omitirHastaIso: m['omitirHasta'] == null
+            ? null
+            : (m['omitirHasta'] as String),
         dias: (m['dias'] is List)
             ? (m['dias'] as List)
                 .map<int>((d) => int.tryParse(d.toString()) ?? 0)

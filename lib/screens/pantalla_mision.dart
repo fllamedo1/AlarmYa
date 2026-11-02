@@ -147,7 +147,7 @@ class _PantallaMisionState extends State<PantallaMision> {
 
   Future<void> _posponer() async {
     await ServicioAudio.instancia.parar();
-    await ServicioNotificaciones.instancia.programarSnooze(widget.idAlarma, 5);
+    await ServicioNotificaciones.instancia.programarSnooze(widget.idAlarma);
     if (mounted) Navigator.of(context).pop();
   }
 

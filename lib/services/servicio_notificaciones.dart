@@ -7,6 +7,7 @@ import 'package:timezone/data/latest_all.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
 import 'almacenamiento.dart';
+import 'servicio_ajustes.dart';
 import '../models/alarma.dart';
 
 /// Gestor central de notificaciones (las alarmas reales del sistema iOS).
@@ -18,12 +19,25 @@ class ServicioNotificaciones {
   bool _listo = false;
 
   /// Cada cuánto vuelve a sonar el "bip" hasta que se abre la misión.
-  static const _reintentos = 10;
   static const _reintentoCadaSec = 30;
 
   /// Callback que la app registra; se invoca con el id de la alarma cuando
   /// el usuario toca la notificación de alarma.
   void Function(String idAlarma)? alAbrirMision;
+
+  String get _archivoSonido {
+    final s = ServicioAjustes.instancia.sonido;
+    return s == 'alarm' ? 'klaxon' : s;
+  }
+
+  NotificationDetails get _detalles => NotificationDetails(
+        iOS: DarwinNotificationDetails(
+          sound: '$_archivoSonido.wav',
+          interruptionLevel: InterruptionLevel.timeSensitive,
+          presentAlert: true,
+          presentSound: true,
+        ),
+      );
 
   Future<void> inicializar() async {
     if (_listo) return;
@@ -90,53 +104,49 @@ class ServicioNotificaciones {
 
   /// Borra todas las alarmas programadas y reprograma las activas.
   Future<void> reprogramar(List<Alarma> alarmas) async {
+    // Omisiones vencidas: se limpian y se guardan.
+    final ahora = DateTime.now();
+    var cambio = false;
+    for (final a in alarmas) {
+      if (a.omitirHasta != null && !a.omitirHasta!.isAfter(ahora)) {
+        a.omitirHasta = null;
+        cambio = true;
+      }
+    }
+    if (cambio) await Almacenamiento.instancia.guardar(alarmas);
+
     await _plugin.cancelAllPendingNotifications();
     for (final a in alarmas) {
       if (a.activa) await _programar(a);
     }
   }
 
-  /// Cancels los bips de reintento y reactiva los disparos futuros.
+  /// Cancela los bips de reintento y reactiva los disparos futuros.
   Future<void> reprogramarDesdeGuardado() async {
+    await ServicioAjustes.instancia.cargar();
     final alarmas = await Almacenamiento.instancia.cargar();
     await reprogramar(alarmas);
   }
 
-  /// Pospone la alarma X minutos: una notificación única con el mismo
-  /// payload (al tocarla vuelve a abrir la misión).
-  Future<void> programarSnooze(String idAlarma, int minutos) async {
+  /// Pospone la alarma X minutos (X configurable en Ajustes). Al tocarla
+  /// vuelve a abrir la misión.
+  Future<void> programarSnooze(String idAlarma) async {
+    final ajustes = ServicioAjustes.instancia;
     final ahora = tz.TZDateTime.now(tz.local);
-    final fecha = ahora.add(Duration(minutes: minutos));
-    final detalles = const NotificationDetails(
-      iOS: DarwinNotificationDetails(
-        sound: 'alarm.wav',
-        interruptionLevel: InterruptionLevel.timeSensitive,
-        presentAlert: true,
-        presentSound: true,
-      ),
-    );
+    final fecha = ahora.add(Duration(minutes: ajustes.snoozeMin));
     final payload = jsonEncode(<String, dynamic>{'id': idAlarma});
     await _notificar(
       id: (DateTime.now().millisecondsSinceEpoch ~/ 1000).hashCode.abs(),
       title: '⏰ Pospuesta',
-      body: 'Posponer otra vez…',
+      body: 'Suena en ${ajustes.snoozeMin} min…',
       fecha: fecha,
-      detalles: detalles,
+      detalles: _detalles,
       payload: payload,
     );
   }
 
   Future<void> _programar(Alarma a) async {
     final ahora = tz.TZDateTime.now(tz.local);
-
-    final detalles = const NotificationDetails(
-      iOS: DarwinNotificationDetails(
-        sound: 'alarm.wav',
-        interruptionLevel: InterruptionLevel.timeSensitive,
-        presentAlert: true,
-        presentSound: true,
-      ),
-    );
 
     final payload = jsonEncode(<String, dynamic>{'id': a.id});
     final titulo = '⏰ ${a.titulo.isEmpty ? 'Alarma' : a.titulo}';
@@ -148,19 +158,41 @@ class ServicioNotificaciones {
       if (!fecha.isAfter(ahora)) {
         fecha = fecha.add(const Duration(days: 1));
       }
-      await _notificar(id: _idBase(a.hashCode.abs(), 0), title: titulo, body: cuerpo, fecha: fecha, detalles: detalles, payload: payload);
-      await _programarReintentos(a, fecha, 0, titulo, cuerpo, detalles, payload);
+      await _notificar(
+        id: _idBase(a.hashCode.abs(), 0),
+        title: titulo,
+        body: cuerpo,
+        fecha: fecha,
+        detalles: _detalles,
+        payload: payload,
+      );
+      await _programarReintentos(a, fecha, 0, titulo, cuerpo, payload);
     } else {
+      final omitir = a.omitirHasta;
       for (final dia in a.dias) {
-        // Próxima fecha con ese día de semana (1 = lunes ... 7 = domingo)
+        // Próxima fecha con ese día de semana (1 = lunes ... 7 = domingo).
+        // Si hay omisión vigente, arranca desde la siguiente
+        // ocurrencia a la omitida.
         var fecha = tz.TZDateTime(
             tz.local, ahora.year, ahora.month, ahora.day, a.hora, a.minuto);
-        // DateTime.weekday: 1 = lunes ... 7 = domingo (igual a nuestra codificación)
-        while (fecha.weekday != dia || !fecha.isAfter(ahora)) {
+        // DateTime.weekday: 1 = lunes ... 7 = domingo (igual a nuestra codificación).
+        // Si hay omisión vigente, salta todo disparo hasta esa fecha inclusive.
+        final omitirL = omitir == null ? null : tz.TZDateTime.from(omitir, tz.local);
+        while (fecha.weekday != dia ||
+            !fecha.isAfter(ahora) ||
+            (omitirL != null && !fecha.isAfter(omitirL))) {
           fecha = fecha.add(const Duration(days: 1));
         }
-        await _notificar(id: _idBase(a.hashCode.abs(), dia), title: titulo, body: cuerpo, fecha: fecha, detalles: detalles, payload: payload, semanal: true);
-        await _programarReintentos(a, fecha, dia, titulo, cuerpo, detalles, payload);
+        await _notificar(
+          id: _idBase(a.hashCode.abs(), dia),
+          title: titulo,
+          body: cuerpo,
+          fecha: fecha,
+          detalles: _detalles,
+          payload: payload,
+          semanal: true,
+        );
+        await _programarReintentos(a, fecha, dia, titulo, cuerpo, payload);
       }
     }
   }
@@ -189,42 +221,63 @@ class ServicioNotificaciones {
 
   /// Bips de reintento: mismo sonido cada N segundos hasta que la app abra
   /// la misión (se cancelan en ese momento) o se apague/desactive la alarma.
+  /// La cantidad se configura en Ajustes.
   Future<void> _programarReintentos(
     Alarma a,
     tz.TZDateTime fechaBase,
     int dia,
     String titulo,
     String cuerpo,
-    NotificationDetails detalles,
     String payload,
   ) async {
-    for (var n = 1; n <= _reintentos; n++) {
-      final fecha = fechaBase.add(Duration(seconds: _reintentoCadaSec * n));
-      if (a.dias.isEmpty) {
-        await _notificar(
-          id: _idReintento(a.hashCode.abs(), dia, n),
-          title: titulo,
-          body: cuerpo,
-          fecha: fecha,
-          detalles: detalles,
-          payload: payload,
-        );
-      } else {
-        // Para alarmas semanales, repetir cada semana en el mismo horario
-        // (los reintentos dentro de esta fecha son "una sola vez").
-        await _notificar(
-          id: _idReintento(a.hashCode.abs(), dia, n),
-          title: titulo,
-          body: cuerpo,
-          fecha: fecha,
-          detalles: detalles,
-          payload: payload,
-          semanal: true,
-        );
-      }
+    final ajustes = ServicioAjustes.instancia;
+    if (!ajustes.reintentarBeep) return;
+
+    for (var n = 1; n <= ajustes.nReintentos; n++) {
+      final fecha = fechaBase.add(const Duration(seconds: _reintentoCadaSec) * n);
+      await _notificar(
+        id: _idReintento(a.hashCode.abs(), dia, n),
+        title: titulo,
+        body: cuerpo,
+        fecha: fecha,
+        detalles: _detalles,
+        payload: payload,
+      );
     }
   }
 
   int _idBase(int idAlarma, int dia) => '${idAlarma}b$dia'.hashCode.abs();
-  int _idReintento(int idAlarma, int dia, int n) => '${idAlarma}r$dia$n'.hashCode.abs();
+  int _idReintento(int idAlarma, int dia, int n) =>
+      '${idAlarma}r$dia$n'.hashCode.abs();
+
+  static const _diaCorto = ['', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb', 'dom'];
+
+  /// "Omitir próxima alarma". Devuelve el mensaje para mostrar.
+  /// Con alarmas de una sola vez, la desactiva.
+  Future<String> omitirSiguiente(Alarma a, List<Alarma> todas) async {
+    final ahora = DateTime.now();
+    if (a.dias.isEmpty) {
+      a.activa = false;
+      await reprogramar(todas);
+      return 'Alarma de una sola vez desactivada.';
+    }
+
+    // Si ya tenía omisión vigente, avanza a la siguiente.
+    final base = a.omitirHasta != null && a.omitirHasta!.isAfter(ahora)
+        ? a.omitirHasta!
+        : ahora;
+    var f = DateTime(base.year, base.month, base.day, a.hora, a.minuto);
+    while (!f.isAfter(base) ||
+        !a.dias.contains(f.weekday)) {
+      f = f.add(const Duration(days: 1));
+    }
+    a.omitirHasta = f;
+
+    await Almacenamiento.instancia.guardar(todas);
+    await reprogramar(todas);
+    final d = _diaCorto[f.weekday];
+    final hh = a.hora.toString().padLeft(2, '0');
+    final mm = a.minuto.toString().padLeft(2, '0');
+    return 'Omitida: la próxima suena el $d ${f.day}/${f.month} a las $hh:$mm';
+  }
 }

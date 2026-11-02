@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 
 import 'screens/pantalla_mision.dart';
 import 'screens/pantalla_principal.dart';
+import 'services/servicio_ajustes.dart';
 import 'services/servicio_notificaciones.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await ServicioNotificaciones.instancia.inicializar();
+  await ServicioAjustes.instancia.cargar();
   runApp(const AlarmYaApp());
 }
 

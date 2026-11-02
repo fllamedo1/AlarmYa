@@ -1,79 +1,111 @@
-// Genera alarm.wav: tono de alarma propio (beep alternado con pausa), 24 s.
-// Ejecutar: dart run tool/gen_sound.dart <salida.wav>
+// Genera tonos de alarma propios (sin material de terceros).
+// Uso: dart run tool/gen_sound.dart <salida.wav> <tipo>
+// tipos: klaxon (bip doble), campana (campana con decaimiento),
+// beep (pulso corto), radar (barrido de frecuencia)
 import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
 
 const int sampleRate = 22050;
-const double duracion = 24.0; // iOS limita sonidos de notificación a 30 s
 
 List<int> u32LE(int v) =>
     [v & 0xFF, (v >> 8) & 0xFF, (v >> 16) & 0xFF, (v >> 24) & 0xFF];
 
 List<int> u16LE(int v) => [v & 0xFF, (v >> 8) & 0xFF];
 
-void main(List<String> args) {
-  final salida = args.isNotEmpty ? args[0] : 'alarm.wav';
+double envolvente(double tLocal, double largo, double ataque, double cola) {
+  if (tLocal < ataque) return tLocal / ataque;
+  if (tLocal > largo - cola) return max(0.0, (largo - tLocal) / cola);
+  return 1.0;
+}
+
+List<int> generar(String tipo) {
+  // Duración total < 30 s (límite iOS para sonidos de notificación)
+  const duracion = 24.0;
   final n = (sampleRate * duracion).toInt();
-
-  final data = Uint8List(n * 2); // PCM 16-bit mono
+  final fases = <double>[0.0, 0.0, 0.0];
+  final data = Uint8List(n * 2);
   var idx = 0;
-  // Patrón: 8 beeps de 0.35 s (salta entre 1046 Hz y 1568 Hz) + 3.4 s de pausa
-  const beepLen = 0.35;
-  const saltoBeeps = 8;
-  const pausa = 3.4;
-  const ciclo = beepLen * saltoBeeps + pausa;
-
-  var fase = 0.0;
 
   for (var i = 0; i < n; i++) {
     final t = i / sampleRate;
-    final posCiclo = t % ciclo;
-    double sample = 0.0;
-    if (posCiclo < beepLen * saltoBeeps) {
-      final beepIdx = (posCiclo / beepLen).floor();
-      final f = beepIdx % 2 == 0 ? 1046.0 : 1568.0;
-      final tLocal = posCiclo % beepLen;
-      // Envolvente simple (ataque + decaimiento) para evitar chicharreo
-      const ataque = 0.015;
-      const finDecay = beepLen - 0.05;
-      double env;
-      if (tLocal < ataque) {
-        env = tLocal / ataque;
-      } else if (tLocal > finDecay) {
-        env = (beepLen - tLocal) / (beepLen - finDecay);
-      } else {
-        env = 1.0;
-      }
-      fase += 2 * pi * f / sampleRate;
-      // armónico suave
-      final onda = sin(fase) * 0.6 + sin(fase * 2) * 0.15;
-      sample = onda * env * 0.85;
-      // mezcla minúscula de ruido para textura
-      sample += (sin(fase * 13.7) * 0.5) * 0.02;
+    double s = 0.0;
+
+    switch (tipo) {
+      case 'klaxon':
+        // 8 bips alternando 1046/1568 Hz, 0,35 s c/u, pausa 3,4 s
+        const ciclo = 0.35 * 8 + 3.4;
+        final p = t % ciclo;
+        if (p < 0.35 * 8) {
+          final b = (p / 0.35).floor();
+          final f = b % 2 == 0 ? 1046.0 : 1568.0;
+          final env = envolvente(p % 0.35, 0.35, 0.015, 0.05);
+          fases[0] += 2 * pi * f / sampleRate;
+          s = (sin(fases[0]) * 0.6 + sin(fases[0] * 2) * 0.15) * env * 0.85;
+        }
+        break;
+      case 'campana':
+        // Campanadas cada 2,5 s con decaimiento largo
+        const ciclo = 2.5;
+        final p = t % ciclo;
+        if (p < 1.8) {
+          final env = exp(-3.2 * p);
+          fases[0] += 2 * pi * 880.0 / sampleRate;
+          fases[1] += 2 * pi * 1320.0 / sampleRate;
+          s = (sin(fases[0]) * 0.7 + sin(fases[1]) * 0.2) * env;
+          fases[2] += 2 * pi * 44.0 / sampleRate;
+          s += sin(fases[2]) * 0.05 * env;
+        }
+        break;
+      case 'beep':
+        // Pulso corto cada 1 s (estilo despertador digital)
+        const ciclo = 1.0;
+        final p = t % ciclo;
+        if (p < 0.18) {
+          const f = 1000.0;
+          final env = envolvente(p, 0.18, 0.005, 0.02);
+          fases[0] += 2 * pi * f / sampleRate;
+          s = sin(fases[0]) * 0.9 * env;
+        }
+        break;
+      case 'radar':
+        // Barrido sube-baja cada 1,5 s (estilo radar militar)
+        const ciclo = 1.5;
+        final p = t % ciclo;
+        final u = p / ciclo;
+        final f = 500.0 + 1000.0 * (0.5 - (u - 0.5).abs()) * 2;
+        final env = envolvente(p, ciclo, 0.02, 0.1);
+        fases[0] += 2 * pi * f / sampleRate;
+        s = sin(fases[0]) * 0.8 * env;
+        break;
     }
-    final v = (sample.clamp(-1.0, 1.0) * 32767).round();
+
+    final v = (s.clamp(-1.0, 1.0) * 32767).round();
     data[idx++] = v & 0xFF;
     data[idx++] = (v >> 8) & 0xFF;
   }
 
-  // Construye el archivo WAV (header PCM + data)
   final bytes = <int>[];
   bytes.addAll('RIFF'.codeUnits);
   bytes.addAll(u32LE(36 + data.length));
   bytes.addAll('WAVE'.codeUnits);
   bytes.addAll('fmt '.codeUnits);
-  bytes.addAll(u32LE(16)); // tamaño chunk fmt
-  bytes.addAll(u16LE(1)); // formato PCM
-  bytes.addAll(u16LE(1)); // mono
+  bytes.addAll(u32LE(16));
+  bytes.addAll(u16LE(1));
+  bytes.addAll(u16LE(1));
   bytes.addAll(u32LE(sampleRate));
-  bytes.addAll(u32LE(sampleRate * 2)); // bytes por segundo (16-bit mono)
-  bytes.addAll(u16LE(2)); // bytes por muestra
-  bytes.addAll(u16LE(16)); // bits
+  bytes.addAll(u32LE(sampleRate * 2));
+  bytes.addAll(u16LE(2));
+  bytes.addAll(u16LE(16));
   bytes.addAll('data'.codeUnits);
   bytes.addAll(u32LE(data.length));
   bytes.addAll(data);
+  return bytes;
+}
 
-  File(salida).writeAsBytes(bytes, flush: true);
-  stdout.writeln('Generado $salida (${data.length} bytes de audio)');
+void main(List<String> args) {
+  final salida = args.isNotEmpty ? args[0] : 'alarm.wav';
+  final tipo = args.length > 1 ? args[1] : 'klaxon';
+  File(salida).writeAsBytes(generar(tipo), flush: true);
+  stdout.writeln('Generado $salida (tipo $tipo)');
 }

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/alarma.dart';
 import '../services/almacenamiento.dart';
 import '../services/servicio_notificaciones.dart';
+import 'pantalla_ajustes.dart';
 import 'pantalla_edicion.dart';
 
 const _diasCortos = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
@@ -70,11 +71,39 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
     await _aplicarCambios();
   }
 
+  Future<void> _abrirAjustes() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const PantallaAjustes()),
+    );
+    // Al volver: recarga ajustes y reprograma (el tono puede haber cambiado).
+    await ServicioNotificaciones.instancia.reprogramarDesdeGuardado();
+    await _cargar();
+  }
+
+  Future<void> _omitirSiguiente(Alarma a) async {
+    final mensaje = await ServicioNotificaciones.instancia
+        .omitirSiguiente(a, _alarmas);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(mensaje), duration: const Duration(seconds: 3)),
+      );
+    }
+    await _cargar();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Alarm'),
+        actions: [
+          IconButton(
+            tooltip: 'Ajustes',
+            icon: const Icon(Icons.settings_outlined),
+            color: const Color(0xFF666666),
+            onPressed: _abrirAjustes,
+          ),
+        ],
       ),
       body: _alarmas.isEmpty
           ? const Center(
@@ -103,6 +132,7 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
                   _alarmas.removeAt(i);
                   _aplicarCambios();
                 },
+                onOmitir: () => _omitirSiguiente(_alarmas[i]),
               ),
             ),
       floatingActionButton: FloatingActionButton(
@@ -125,12 +155,14 @@ class _TarjetaAlarma extends StatelessWidget {
     required this.onToggle,
     required this.onOpen,
     required this.onDelete,
+    required this.onOmitir,
   });
 
   final Alarma alarma;
   final ValueChanged<bool> onToggle;
   final VoidCallback onOpen;
   final VoidCallback onDelete;
+  final VoidCallback onOmitir;
 
   @override
   Widget build(BuildContext context) {
@@ -138,6 +170,8 @@ class _TarjetaAlarma extends StatelessWidget {
     final colorHora = activo ? const Color(0xFF222222) : const Color(0xFF9E9E9E);
     final texto =
         alarma.titulo.isEmpty ? 'Alarma' : (alarma.titulo);
+    final omitir = alarma.omitirHasta;
+    final omitidoProximo = omitir != null && omitir.isAfter(DateTime.now());
 
     return Dismissible(
       key: Key(alarma.id),
@@ -213,6 +247,15 @@ class _TarjetaAlarma extends StatelessWidget {
                           ),
                         ],
                       ),
+                      if (omitidoProximo && activo)
+                        const Padding(
+                          padding: EdgeInsets.only(top: 6),
+                          child: Text(
+                            '⏸ Omitida: no suena el próximo disparo',
+                            style: TextStyle(
+                                fontSize: 12, color: Color(0xFF999999)),
+                          ),
+                        ),
                     ],
                   ),
                 ),
@@ -221,12 +264,53 @@ class _TarjetaAlarma extends StatelessWidget {
                   value: alarma.activa,
                   onChanged: onToggle,
                 ),
+                IconButton(
+                  icon: const Icon(Icons.more_vert,
+                      color: Color(0xFF999999)),
+                  onPressed: () => _menu(context),
+                ),
               ],
             ),
           ),
         ),
       ),
     );
+  }
+
+  Future<void> _menu(BuildContext context) async {
+    final accion = await showModalBottomSheet<String>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 8),
+            ListTile(
+              leading: const Icon(Icons.block_outlined,
+                  color: Color(0xFFFFB300)),
+              title: const Text('Omitir próxima alarma'),
+              onTap: () => Navigator.pop(ctx, 'omitir'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.edit_outlined),
+              title: const Text('Editar'),
+              onTap: () => Navigator.pop(ctx, 'editar'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.delete_outline,
+                  color: Color(0xFFE57373)),
+              title: const Text('Eliminar',
+                  style: TextStyle(color: Color(0xFFE57373))),
+              onTap: () => Navigator.pop(ctx, 'eliminar'),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+    if (accion == 'omitir') onOmitir();
+    if (accion == 'editar') onOpen();
+    if (accion == 'eliminar') onDelete();
   }
 }
 

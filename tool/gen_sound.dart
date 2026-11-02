@@ -20,8 +20,9 @@ double envolvente(double tLocal, double largo, double ataque, double cola) {
 }
 
 List<int> generar(String tipo) {
-  // Duración total < 30 s (límite iOS para sonidos de notificación)
-  const duracion = 24.0;
+  // Duración total < 30 s (límite iOS para sonidos de notificación).
+  // 'silencio' es un track digital callado para el guardián de fondo.
+  final duracion = tipo == 'silencio' ? 2.0 : 24.0;
   final n = (sampleRate * duracion).toInt();
   final fases = <double>[0.0, 0.0, 0.0];
   final data = Uint8List(n * 2);

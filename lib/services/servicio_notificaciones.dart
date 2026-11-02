@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -10,19 +11,33 @@ import 'almacenamiento.dart';
 import 'servicio_ajustes.dart';
 import '../models/alarma.dart';
 
-/// Gestor central de notificaciones (las alarmas reales del sistema iOS).
+/// Gestor central de notificaciones y del vigilante de alarmas.
+///
+/// Además de programar notificaciones (respaldo visual), corre un
+/// "vigilante" que verifica cada 10 s si toca una alarma. Como la app
+/// se mantiene viva en fondo con el audio silencioso del guardián, el
+/// vigilante puede disparar la alarma por sí mismo: el sonido sale de
+/// la propia app (categoría `playback`) y suena aunque el iPhone esté
+/// en silencio o con No Molestar.
 class ServicioNotificaciones {
   ServicioNotificaciones._();
   static final ServicioNotificaciones instancia = ServicioNotificaciones._();
 
   final _plugin = FlutterLocalNotificationsPlugin();
   bool _listo = false;
+  Timer? _vigilante;
+  final _disparadas = <String>{}; // claves 'id@fechaISO' ya sonadas
 
   /// Cada cuánto vuelve a sonar el "bip" hasta que se abre la misión.
   static const _reintentoCadaSec = 30;
 
+  /// Cada cuánto chequea el vigilante.
+  static const _vigilanciaCada = Duration(seconds: 10);
+
+  static const _categoriaAlarma = 'ALARMA_CAT';
+
   /// Callback que la app registra; se invoca con el id de la alarma cuando
-  /// el usuario toca la notificación de alarma.
+  /// toca dispararla (notificación tocada o vigilante).
   void Function(String idAlarma)? alAbrirMision;
 
   String get _archivoSonido {
@@ -34,6 +49,7 @@ class ServicioNotificaciones {
         iOS: DarwinNotificationDetails(
           sound: '$_archivoSonido.wav',
           interruptionLevel: InterruptionLevel.timeSensitive,
+          categoryIdentifier: _categoriaAlarma,
           presentAlert: true,
           presentSound: true,
         ),
@@ -51,11 +67,24 @@ class ServicioNotificaciones {
       // La app sigue funcionando; las horas programadas usarán tz.local.
     }
 
-    const ajustes = InitializationSettings(
+    final ajustes = InitializationSettings(
       iOS: DarwinInitializationSettings(
         requestAlertPermission: true,
         requestBadgePermission: true,
         requestSoundPermission: true,
+        notificationCategories: [
+          DarwinNotificationCategory(
+            _categoriaAlarma,
+            actions: [
+              DarwinNotificationAction.plain('posponer', 'Posponer 5 min'),
+              DarwinNotificationAction.plain(
+                'desactivar',
+                'Desactivar',
+                options: {DarwinNotificationActionOption.destructive},
+              ),
+            ],
+          ),
+        ],
       ),
     );
 
@@ -74,10 +103,66 @@ class ServicioNotificaciones {
     _listo = true;
   }
 
-  void _alTocar(NotificationResponse r) {
-    if (r.payload != null && r.payload!.isNotEmpty) {
-      _abrirMision(r.payload!);
+  /// Enciende el vigilante: revisa cada 10 s si toca una alarma y, si sí,
+  /// la dispara desde la app (sonido real, ignore silencio/No Molestar).
+  void iniciarVigilante() {
+    if (_vigilante != null) return;
+    _vigilante = Timer.periodic(_vigilanciaCada, (_) => _vigilar());
+  }
+
+  Future<void> _vigilar() async {
+    if (!_listo) return;
+    try {
+      final alarmas = await Almacenamiento.instancia.cargar();
+      final ahora = DateTime.now();
+      for (final a in alarmas) {
+        if (!a.activa) continue;
+        final prox = proximaDe(a, ahora);
+        if (prox == null) continue;
+        if (!ahora.isBefore(prox) &&
+            ahora.difference(prox) < _vigilanciaCada * 2) {
+          final clave = '${a.id}@${prox.toIso8601String()}';
+          if (_disparadas.contains(clave)) continue;
+          _disparadas.add(clave);
+          if (_disparadas.length > 200) {
+            _disparadas.remove(_disparadas.first);
+          }
+          debugPrint('Vigilante: disparando alarma ${a.id}');
+          // Re-arma las próximas ocurrencias (descarta la ya sonada).
+          await reprogramar(alarmas);
+          alAbrirMision?.call(a.id);
+        }
+      }
+    } catch (_) {}
+  }
+
+  void _alTocar(NotificationResponse r) async {
+    final id = (r.payload == null || r.payload!.isEmpty)
+        ? ''
+        : ((jsonDecode(r.payload!) as Map<String, dynamic>)['id'] ?? '')
+            .toString();
+    if (id.isEmpty) return;
+    switch (r.actionId) {
+      case 'posponer':
+        await programarSnooze(id);
+        break;
+      case 'desactivar':
+        await desactivarAlarma(id);
+        break;
+      default:
+        _abrirMision(r.payload!);
     }
+  }
+
+  /// Apaga la alarma desde el botón "Desactivar" de la notificación
+  /// (y cancela sus bips pendientes).
+  Future<void> desactivarAlarma(String id) async {
+    final alarmas = await Almacenamiento.instancia.cargar();
+    for (final a in alarmas) {
+      if (a.id == id) a.activa = false;
+    }
+    await Almacenamiento.instancia.guardar(alarmas);
+    await reprogramar(alarmas);
   }
 
   void _abrirMision(String payload) async {
@@ -249,6 +334,30 @@ class ServicioNotificaciones {
   int _idBase(int idAlarma, int dia) => '${idAlarma}b$dia'.hashCode.abs();
   int _idReintento(int idAlarma, int dia, int n) =>
       '${idAlarma}r$dia$n'.hashCode.abs();
+
+  /// Próxima fecha (local) en que sonaría esta alarma.
+  /// Respeta omisiones vigentes. Devuelve null si no hay próxima.
+  static DateTime? proximaDe(Alarma a, DateTime ahora) {
+    if (!a.activa) return null;
+    final omitir = a.omitirHasta;
+    if (a.dias.isEmpty) {
+      var f = DateTime(ahora.year, ahora.month, ahora.day, a.hora, a.minuto);
+      if (!f.isAfter(ahora)) f = f.add(const Duration(days: 1));
+      if (omitir != null && !f.isAfter(omitir)) return null;
+      return f;
+    }
+    DateTime? mejor;
+    for (final dia in a.dias) {
+      var f = DateTime(ahora.year, ahora.month, ahora.day, a.hora, a.minuto);
+      while (f.weekday != dia ||
+          !f.isAfter(ahora) ||
+          (omitir != null && !f.isAfter(omitir))) {
+        f = f.add(const Duration(days: 1));
+      }
+      if (mejor == null || f.isBefore(mejor)) mejor = f;
+    }
+    return mejor;
+  }
 
   static const _diaCorto = ['', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb', 'dom'];
 

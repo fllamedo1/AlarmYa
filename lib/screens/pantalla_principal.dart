@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/alarma.dart';
 import '../services/almacenamiento.dart';
+import '../services/servicio_audio.dart';
 import '../services/servicio_notificaciones.dart';
 import 'pantalla_ajustes.dart';
 import 'pantalla_edicion.dart';
@@ -48,12 +49,27 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
 
   Future<void> _cargar() async {
     _alarmas = await Almacenamiento.instancia.cargar();
+    // Vigilante: dispara la alarma por sí mismo a la hora programada.
+    ServicioNotificaciones.instancia.iniciarVigilante();
+    // Guardián: audio silencioso en bucle para que iOS no suspenda la
+    // app en segundo plano. Solo si hay alguna alarma activa.
+    if (_alarmas.any((a) => a.activa)) {
+      await ServicioAudio.instancia.iniciarGuardian();
+    } else {
+      await ServicioAudio.instancia.detenerGuardian();
+    }
     if (mounted) setState(() {});
   }
 
   Future<void> _aplicarCambios() async {
     await Almacenamiento.instancia.guardar(_alarmas);
     await ServicioNotificaciones.instancia.reprogramar(_alarmas);
+    // Actualizamos el guardián según haya alarmas activas o no.
+    if (_alarmas.any((a) => a.activa)) {
+      await ServicioAudio.instancia.iniciarGuardian();
+    } else {
+      await ServicioAudio.instancia.detenerGuardian();
+    }
     if (mounted) setState(() {});
   }
 

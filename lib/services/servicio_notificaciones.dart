@@ -46,14 +46,20 @@ class ServicioNotificaciones {
   /// toca dispararla (notificación tocada o vigilante).
   void Function(String idAlarma)? alAbrirMision;
 
-  String get _archivoSonido {
-    final s = ServicioAjustes.instancia.sonido;
-    return s == 'alarm' ? 'klaxon' : s;
+  Future<void> _posponerDesdeNotificacion(String idAlarma) async {
+    // Elimina los reintentos de la alarma que acaba de sonar antes de
+    // programar el nuevo aviso de snooze.
+    await reprogramarDesdeGuardado();
+    await programarSnooze(idAlarma);
   }
 
   NotificationDetails get _detalles => NotificationDetails(
         iOS: DarwinNotificationDetails(
-          sound: '$_archivoSonido.wav',
+          // La notificación es la única capa que iOS ejecuta aunque la app
+          // esté suspendida. El sonido del sistema evita que un recurso
+          // personalizado ausente en una instalación anterior convierta la
+          // alarma bloqueada en una notificación silenciosa.
+          sound: 'default',
           interruptionLevel: InterruptionLevel.timeSensitive,
           categoryIdentifier: _categoriaAlarma,
           presentAlert: true,
@@ -137,7 +143,7 @@ class ServicioNotificaciones {
       final ahora = DateTime.now();
       for (final a in alarmas) {
         if (!a.activa) continue;
-        final prox = proximaDe(a, ahora);
+        final prox = ocurrenciaEnCurso(a, ahora);
         if (prox == null) continue;
         // Ventana normal: hasta 10 s tarde. Ventana tardía: si iOS tuvo
         // la app suspendida, igual disparamos si el usuario desbloquea
@@ -180,7 +186,7 @@ class ServicioNotificaciones {
     if (id.isEmpty) return;
     switch (r.actionId) {
       case 'posponer':
-        await programarSnooze(id);
+        await _posponerDesdeNotificacion(id);
         break;
       case 'desactivar':
         await desactivarAlarma(id);
@@ -407,6 +413,26 @@ class ServicioNotificaciones {
       if (mejor == null || f.isBefore(mejor)) mejor = f;
     }
     return mejor;
+  }
+
+  /// Ocurrencia que está sonando ahora, si la app volvió a ejecutarse dentro
+  /// de la ventana de tolerancia. No usa [proximaDe] porque esa función
+  /// descarta intencionalmente las horas ya vencidas.
+  static DateTime? ocurrenciaEnCurso(Alarma a, DateTime ahora) {
+    if (!a.activa) return null;
+
+    final fecha = DateTime(
+      ahora.year,
+      ahora.month,
+      ahora.day,
+      a.hora,
+      a.minuto,
+    );
+    if (ahora.isBefore(fecha)) return null;
+    if (a.dias.isNotEmpty && !a.dias.contains(fecha.weekday)) return null;
+    if (a.omitirHasta != null && !fecha.isAfter(a.omitirHasta!)) return null;
+
+    return fecha;
   }
 
   static const _diaCorto = ['', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb', 'dom'];

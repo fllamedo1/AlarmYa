@@ -31,7 +31,6 @@ class ServicioAudio {
   AudioContext _contexto() => AudioContext(
         iOS: AudioContextIOS(
           category: AVAudioSessionCategory.playback,
-          options: {AVAudioSessionOptions.mixWithOthers},
         ),
       );
 

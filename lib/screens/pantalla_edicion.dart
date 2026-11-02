@@ -66,6 +66,9 @@ class _PantallaEdicionState extends State<PantallaEdicion> {
     a.dificultad = _dificultad;
     a.sacudidasRequeridas = _sacudidas;
     a.dias = Set<int>.from(_dias);
+    // Guardar una alarma editada reactiva la ocurrencia elegida, incluso si
+    // antes se había usado "Omitir próxima alarma".
+    a.omitirHasta = null;
     a.activa = true;
     if (mounted) Navigator.of(context).pop(a);
   }

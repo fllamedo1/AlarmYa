@@ -407,7 +407,7 @@ class _PantallaMisionState extends State<PantallaMision> {
     return TextButton(
       onPressed: _posponer,
       child: const Text(
-        'Posponer 5 min',
+        'Posponer',
         style: TextStyle(
           color: Color(0xFF999999),
           fontSize: 14,

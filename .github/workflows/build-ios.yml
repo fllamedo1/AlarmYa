@@ -1,0 +1,44 @@
+name: build-ios
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "lib/**"
+      - "ios/**"
+      - "pubspec.yaml"
+      - "assets/**"
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Instalar Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: "3.47.9"
+
+      - name: Dependencias
+        run: flutter pub get
+
+      - name: Compilar iOS (sin firmar)
+        run: flutter build ios --release --no-codesign
+
+      - name: Empaquetar IPA
+        run: |
+          cd build/ios/iphoneos
+          mkdir -p Payload
+          cp -r Runner.app Payload/
+          zip -qry AlarmYa-unsigned.ipa Payload
+
+      - name: Subir IPA como artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AlarmYa-ipa
+          path: build/ios/iphoneos/AlarmYa-unsigned.ipa
+          retention-days: 30

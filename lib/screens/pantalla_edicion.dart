@@ -178,46 +178,55 @@ class _PantallaEdicionState extends State<PantallaEdicion> {
             child: _mision == TipoMision.matematica
                 ? Padding(
                     padding: const EdgeInsets.only(top: 12),
-                    child: SegmentedButton<Dificultad>(
-                      style: ButtonStyle(
-                        side: WidgetStateProperty.all(
-                          const BorderSide(color: Color(0xFFFFB300)),
-                        ),
-                      ),
-                      segments: const [
-                        ButtonSegment(value: Dificultad.facil, label: Text('Fácil')),
-                        ButtonSegment(value: Dificultad.media, label: Text('Media')),
-                        ButtonSegment(
-                            value: Dificultad.dificil, label: Text('Difícil')),
-                      ],
-                      selected: {_dificultad},
-                      selectedIcon: const Icon(Icons.check),
-                      onSelectionChanged: (s) =>
-                          setState(() => _dificultad = s.first),
-                    ),
-                    const SizedBox(height: 10),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    child: Column(
                       children: [
-                        const Text(
-                          'Cantidad de cuentas',
-                          style: TextStyle(
-                              fontSize: 13, color: Color(0xFF666666)),
-                        ),
-                        DropdownButton<int>(
-                          value: _cuentasMatematicas,
-                          items: [
-                            for (var n = 1; n <= 20; n++)
-                              DropdownMenuItem(
-                                value: n,
-                                child: Text('$n'),
-                              ),
+                        SegmentedButton<Dificultad>(
+                          style: ButtonStyle(
+                            side: WidgetStateProperty.all(
+                              const BorderSide(color: Color(0xFFFFB300)),
+                            ),
+                          ),
+                          segments: const [
+                            ButtonSegment(
+                                value: Dificultad.facil,
+                                label: Text('Fácil')),
+                            ButtonSegment(
+                                value: Dificultad.media,
+                                label: Text('Media')),
+                            ButtonSegment(
+                                value: Dificultad.dificil,
+                                label: Text('Difícil')),
                           ],
-                          onChanged: (v) {
-                            if (v != null) {
-                              setState(() => _cuentasMatematicas = v);
-                            }
-                          },
+                          selected: {_dificultad},
+                          selectedIcon: const Icon(Icons.check),
+                          onSelectionChanged: (s) =>
+                              setState(() => _dificultad = s.first),
+                        ),
+                        const SizedBox(height: 10),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'Cantidad de cuentas',
+                              style: TextStyle(
+                                  fontSize: 13, color: Color(0xFF666666)),
+                            ),
+                            DropdownButton<int>(
+                              value: _cuentasMatematicas,
+                              items: [
+                                for (var n = 1; n <= 20; n++)
+                                  DropdownMenuItem(
+                                    value: n,
+                                    child: Text('$n'),
+                                  ),
+                              ],
+                              onChanged: (v) {
+                                if (v != null) {
+                                  setState(() => _cuentasMatematicas = v);
+                                }
+                              },
+                            ),
+                          ],
                         ),
                       ],
                     ),

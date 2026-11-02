@@ -27,6 +27,7 @@ class ServicioNotificaciones {
   bool _listo = false;
   Timer? _vigilante;
   final _disparadas = <String>{}; // claves 'id@fechaISO' ya sonadas
+  String? _misionPendiente; // si la app arrancó fría tocando una notificación
 
   /// Cada cuánto vuelve a sonar el "bip" hasta que se abre la misión.
   static const _reintentoCadaSec = 30;
@@ -174,9 +175,23 @@ class ServicioNotificaciones {
         // Matamos los "bip" de reintento pendientes y dejamos armados los
         // disparos de las próximas semanas (para alarmas que se repiten).
         await reprogramarDesdeGuardado();
-        alAbrirMision?.call(id);
+        if (alAbrirMision == null) {
+          // La app arrancó fría: nadie registró el callback todavía.
+          // Guardamos la misión para que se abra apenas cargue la UI.
+          _misionPendiente = id;
+        } else {
+          alAbrirMision?.call(id);
+        }
       }
     } catch (_) {}
+  }
+
+  /// Id de alarma cuya misión quedó pendiente de abrir (arranque frío
+  /// desde notification tap). Devuelve el id y limpia.
+  String? tomarMisionPendiente() {
+    final p = _misionPendiente;
+    _misionPendiente = null;
+    return p;
   }
 
   Future<bool> pedirPermiso() async {

@@ -32,6 +32,12 @@ class _AlarmYaAppState extends State<AlarmYaApp> {
         MaterialPageRoute(builder: (_) => PantallaMision(idAlarma: id)),
       );
     };
+    // Si la app arrancó fría porque el usuario tocó la notificación de
+    // alarma, abrimos la misión que quedó pendiente.
+    final pendiente = ServicioNotificaciones.instancia.tomarMisionPendiente();
+    if (pendiente != null) {
+      ServicioNotificaciones.instancia.alAbrirMision?.call(pendiente);
+    }
     // Pedir permiso de notificaciones al primer arranque.
     ServicioNotificaciones.instancia.pedirPermiso();
   }

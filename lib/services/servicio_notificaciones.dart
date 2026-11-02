@@ -33,7 +33,7 @@ class ServicioNotificaciones {
   static const _reintentoCadaSec = 30;
 
   /// Cada cuánto chequea el vigilante.
-  static const _vigilanciaCada = Duration(seconds: 10);
+  static const _vigilanciaCada = Duration(seconds: 5);
 
   static const _categoriaAlarma = 'ALARMA_CAT';
 
@@ -131,7 +131,12 @@ class ServicioNotificaciones {
           debugPrint('Vigilante: disparando alarma ${a.id}');
           // Re-arma las próximas ocurrencias (descarta la ya sonada).
           await reprogramar(alarmas);
-          alAbrirMision?.call(a.id);
+          // Abrir la misión inmediatamente.
+          if (alAbrirMision != null) {
+            alAbrirMision?.call(a.id);
+          } else {
+            _misionPendiente = a.id;
+          }
         }
       }
     } catch (_) {}

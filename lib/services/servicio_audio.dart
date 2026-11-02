@@ -41,13 +41,15 @@ class ServicioAudio {
     try {
       await _player.setAudioContext(_contexto());
       await _player.setReleaseMode(ReleaseMode.loop);
-      await _player.setVolume(1.0);
+      // Arranque directo: si subirVolumen está activo empieza en 0.35 y sube;
+      // si no, va a 1.0 de golpe. Nunca fuerza 1.0 antes de tocar.
+      var nivelInicial = ajustes.subirVolumen ? 0.5 : 1.0;
+      await _player.setVolume(nivelInicial);
       await _player.play(AssetSource('sounds/$archivo.wav'));
 
       if (ajustes.subirVolumen) {
-        // Empieza suave y sube hasta 1.0 en ~8 s
-        var nivel = 0.35;
-        await _player.setVolume(nivel);
+        // Sube de 0.5 a 1.0 en ~7 s
+        var nivel = nivelInicial;
         _subidaVolumen = Timer.periodic(
           const Duration(milliseconds: 500),
           (t) async {
@@ -55,7 +57,7 @@ class ServicioAudio {
               t.cancel();
               return;
             }
-            nivel = (nivel + 0.075).clamp(0.0, 1.0);
+            nivel = (nivel + 0.08).clamp(0.0, 1.0);
             await _player.setVolume(nivel);
             if (nivel >= 1.0) t.cancel();
           },

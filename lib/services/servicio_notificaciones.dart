@@ -55,11 +55,10 @@ class ServicioNotificaciones {
 
   NotificationDetails get _detalles => NotificationDetails(
         iOS: DarwinNotificationDetails(
-          // La notificación es la única capa que iOS ejecuta aunque la app
-          // esté suspendida. El sonido del sistema evita que un recurso
-          // personalizado ausente en una instalación anterior convierta la
-          // alarma bloqueada en una notificación silenciosa.
-          sound: 'default',
+          // null indica el sonido de notificación predeterminado de iOS.
+          // No usar "default": no es un nombre de archivo válido para una
+          // UNNotificationSound programada.
+          sound: null,
           interruptionLevel: InterruptionLevel.timeSensitive,
           categoryIdentifier: _categoriaAlarma,
           presentAlert: true,

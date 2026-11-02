@@ -20,7 +20,9 @@ class _PantallaEdicionState extends State<PantallaEdicion> {
   late int _minuto;
   late TipoMision _mision;
   late Dificultad _dificultad;
+  late int _cuentasMatematicas;
   late int _sacudidas;
+  late bool _permitirPosponer;
   late Set<int> _dias;
 
   @override
@@ -32,7 +34,9 @@ class _PantallaEdicionState extends State<PantallaEdicion> {
     _minuto = a?.minuto ?? 30;
     _mision = a?.mision ?? TipoMision.ninguna;
     _dificultad = a?.dificultad ?? Dificultad.media;
+    _cuentasMatematicas = a?.cuentasMatematicas ?? 1;
     _sacudidas = a?.sacudidasRequeridas ?? 10;
+    _permitirPosponer = a?.permitirPosponer ?? true;
     _dias = Set<int>.from(a?.dias ?? <int>{});
   }
 
@@ -64,7 +68,9 @@ class _PantallaEdicionState extends State<PantallaEdicion> {
     a.minuto = _minuto;
     a.mision = _mision;
     a.dificultad = _dificultad;
+    a.cuentasMatematicas = _cuentasMatematicas;
     a.sacudidasRequeridas = _sacudidas;
+    a.permitirPosponer = _permitirPosponer;
     a.dias = Set<int>.from(_dias);
     // Guardar una alarma editada reactiva la ocurrencia elegida, incluso si
     // antes se había usado "Omitir próxima alarma".
@@ -189,6 +195,32 @@ class _PantallaEdicionState extends State<PantallaEdicion> {
                       onSelectionChanged: (s) =>
                           setState(() => _dificultad = s.first),
                     ),
+                    const SizedBox(height: 10),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Cantidad de cuentas',
+                          style: TextStyle(
+                              fontSize: 13, color: Color(0xFF666666)),
+                        ),
+                        DropdownButton<int>(
+                          value: _cuentasMatematicas,
+                          items: [
+                            for (var n = 1; n <= 20; n++)
+                              DropdownMenuItem(
+                                value: n,
+                                child: Text('$n'),
+                              ),
+                          ],
+                          onChanged: (v) {
+                            if (v != null) {
+                              setState(() => _cuentasMatematicas = v);
+                            }
+                          },
+                        ),
+                      ],
+                    ),
                   )
                 : null,
           ),
@@ -228,6 +260,16 @@ class _PantallaEdicionState extends State<PantallaEdicion> {
                     ),
                   )
                 : null,
+          ),
+          const SizedBox(height: 16),
+          Card(
+            child: SwitchListTile(
+              title: const Text('Permitir posponer'),
+              subtitle: const Text('Muestra el botón para posponer la alarma'),
+              value: _permitirPosponer,
+              activeColor: const Color(0xFFFFB300),
+              onChanged: (v) => setState(() => _permitirPosponer = v),
+            ),
           ),
           const SizedBox(height: 16),
           // ── Repetir ──

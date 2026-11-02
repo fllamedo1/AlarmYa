@@ -31,6 +31,7 @@ class _PantallaMisionState extends State<PantallaMision> {
   String _entrada = '';
   String _mensaje = '';
   bool _comprobando = false;
+  int _cuentasCompletadas = 0;
 
   // Sacudir
   int _sacudidas = 0;
@@ -91,8 +92,8 @@ class _PantallaMisionState extends State<PantallaMision> {
     final r = Random();
     switch (_alarma!.dificultad) {
       case Dificultad.facil:
-        final a = r.nextInt(20) + 2;
-        final b = r.nextInt(20) + 2;
+        final a = r.nextInt(9) + 1;
+        final b = r.nextInt(9) + 1;
         _pregunta = '$a + $b';
         _respuesta = a + b;
         break;
@@ -137,7 +138,21 @@ class _PantallaMisionState extends State<PantallaMision> {
       if (mounted) setState(() {});
       return;
     }
-    await _completar();
+    _cuentasCompletadas++;
+    if (_cuentasCompletadas >= (_alarma?.cuentasMatematicas ?? 1)) {
+      await _completar();
+      return;
+    }
+    if (mounted) {
+      setState(() {
+        _mensaje =
+            'Correcto. Cuenta ${_cuentasCompletadas + 1} de '
+            '${_alarma?.cuentasMatematicas ?? 1}';
+        _entrada = '';
+        _comprobando = false;
+      });
+    }
+    _nuevaPregunta();
   }
 
   Future<void> _completar() async {
@@ -272,7 +287,7 @@ class _PantallaMisionState extends State<PantallaMision> {
               ),
             ),
           ),
-          _botonPosponer(),
+          if (_alarma?.permitirPosponer ?? true) _botonPosponer(),
         ],
       ),
     );
@@ -336,7 +351,7 @@ class _PantallaMisionState extends State<PantallaMision> {
               ),
             ),
           ),
-          _botonPosponer(),
+          if (_alarma?.permitirPosponer ?? true) _botonPosponer(),
         ],
       ),
     );
@@ -397,7 +412,7 @@ class _PantallaMisionState extends State<PantallaMision> {
                   const AlwaysStoppedAnimation<Color>(Color(0xFFFFB300)),
             ),
           ),
-          _botonPosponer(),
+          if (_alarma?.permitirPosponer ?? true) _botonPosponer(),
         ],
       ),
     );

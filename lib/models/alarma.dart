@@ -13,7 +13,9 @@ class Alarma {
     this.activa = true,
     this.mision = TipoMision.ninguna,
     this.dificultad = Dificultad.media,
+    this.cuentasMatematicas = 1,
     this.sacudidasRequeridas = 10,
+    this.permitirPosponer = true,
     this.dias = const <int>{},
     this.omitirHastaIso,
   });
@@ -25,7 +27,9 @@ class Alarma {
   bool activa;
   TipoMision mision;
   Dificultad dificultad;
+  int cuentasMatematicas;
   int sacudidasRequeridas;
+  bool permitirPosponer;
   /// Días de la semana en que se repite. 1 = lunes ... 7 = domingo.
   /// Vacío = alarma de una sola vez.
   Set<int> dias;
@@ -52,7 +56,9 @@ class Alarma {
         'activa': activa,
         'mision': TipoMision.values.indexOf(mision),
         'dificultad': Dificultad.values.indexOf(dificultad),
+        'cuentasMatematicas': cuentasMatematicas,
         'sacudidas': sacudidasRequeridas,
+        'permitirPosponer': permitirPosponer,
         'dias': dias.toList()..sort(),
         if (omitirHastaIso != null) 'omitirHasta': omitirHastaIso,
       };
@@ -73,7 +79,11 @@ class Alarma {
                 m['dificultad'] < Dificultad.values.length
             ? Dificultad.values[m['dificultad'] as int]
             : Dificultad.media,
+        cuentasMatematicas: _intDe(m['cuentasMatematicas'], 1).clamp(1, 20),
         sacudidasRequeridas: _intDe(m['sacudidas'], 10).clamp(3, 60),
+        permitirPosponer: m['permitirPosponer'] is bool
+            ? m['permitirPosponer'] as bool
+            : true,
         omitirHastaIso: m['omitirHasta'] == null
             ? null
             : (m['omitirHasta'] as String),

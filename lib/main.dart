@@ -12,6 +12,9 @@ void main() async {
   Registro.instancia.add('App iniciada');
   await ServicioNotificaciones.instancia.inicializar();
   await ServicioAjustes.instancia.cargar();
+  // Las notificaciones pendientes se pierden al reinstalar la IPA o si iOS
+  // las purga; restaurarlas al arrancar evita depender solo del vigilante.
+  await ServicioNotificaciones.instancia.reprogramarDesdeGuardado();
   runApp(const AlarmYaApp());
 }
 

@@ -34,11 +34,6 @@ class ServicioNotificaciones {
   bool get vigilanteActivo => _vigilante != null;
   int _ticks = 0;
 
-  String get _archivoSonido {
-    final s = ServicioAjustes.instancia.sonido;
-    return s == 'alarm' ? 'klaxon' : s;
-  }
-
   /// Cada cuánto vuelve a sonar el "bip" hasta que se abre la misión.
   static const _reintentoCadaSec = 30;
 
@@ -60,7 +55,9 @@ class ServicioNotificaciones {
 
   NotificationDetails get _detalles => NotificationDetails(
         iOS: DarwinNotificationDetails(
-          sound: '$_archivoSonido.wav',
+          // El sonido nativo permite comprobar la entrega de audio de iOS
+          // sin depender de un recurso WAV personalizado.
+          sound: null,
           interruptionLevel: InterruptionLevel.timeSensitive,
           categoryIdentifier: _categoriaAlarma,
           presentAlert: true,

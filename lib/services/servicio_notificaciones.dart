@@ -137,23 +137,19 @@ class ServicioNotificaciones {
       final ahora = DateTime.now();
       for (final a in alarmas) {
         if (!a.activa) continue;
-        final prox = proximaDe(a, ahora);
-        if (prox == null) continue;
-        // Ventana normal: hasta 10 s tarde. Ventana tardía: si iOS tuvo
-        // la app suspendida, igual disparamos si el usuario desbloquea
-        // dentro de los 30 min siguientes a la hora programada.
-        final tarde = ahora.difference(prox);
-        final enVentana = !ahora.isBefore(prox) &&
-            (tarde < _vigilanciaCada * 2 ||
-                tarde < const Duration(minutes: 30));
-        if (!enVentana) continue;
-        final clave = '${a.id}@${prox.toIso8601String()}';
+        // La ocurrencia que ya pasó (no la próxima): si pasó hace menos
+        // de 30 min, se dispara ahora. Cubre también el caso en que iOS
+        // tuvo la app suspendida y el usuario la reabre tarde.
+        final rec =
+            ocurrenciaReciente(a, ahora, const Duration(minutes: 30));
+        if (rec == null) continue;
+        final clave = '${a.id}@${rec.toIso8601String()}';
         if (_disparadas.contains(clave)) continue;
         _disparadas.add(clave);
         if (_disparadas.length > 200) {
           _disparadas.remove(_disparadas.first);
         }
-        final retraso = tarde.inSeconds;
+        final retraso = ahora.difference(rec).inSeconds;
         Registro.instancia.add(
             'Vigilante: DISPARO alarma ${a.id} (retraso ${retraso}s)');
         // Re-arma las próximas ocurrencias (descarta la ya sonada).
@@ -405,6 +401,42 @@ class ServicioNotificaciones {
         f = f.add(const Duration(days: 1));
       }
       if (mejor == null || f.isBefore(mejor)) mejor = f;
+    }
+    return mejor;
+  }
+
+  /// Ocurrencia más reciente que ya pasó (la que el vigilante debe
+  /// disparar). Devuelve null si la última quedó fuera de [ventana].
+  ///
+  /// Ojo: no se puede usar [proximaDe] para esto. Pasada la hora, la
+  /// "próxima" pasa a ser la de mañana y el disparo se perdería.
+  static DateTime? ocurrenciaReciente(
+    Alarma a,
+    DateTime ahora,
+    Duration ventana,
+  ) {
+    if (!a.activa) return null;
+    final omitir = a.omitirHasta;
+
+    bool omitida(DateTime f) => omitir != null && !f.isAfter(omitir);
+
+    if (a.dias.isEmpty) {
+      var f = DateTime(ahora.year, ahora.month, ahora.day, a.hora, a.minuto);
+      if (f.isAfter(ahora)) f = f.subtract(const Duration(days: 1));
+      if (ahora.difference(f) > ventana) return null;
+      if (omitida(f)) return null;
+      return f;
+    }
+
+    DateTime? mejor;
+    for (final dia in a.dias) {
+      var f = DateTime(ahora.year, ahora.month, ahora.day, a.hora, a.minuto);
+      while (f.weekday != dia || f.isAfter(ahora)) {
+        f = f.subtract(const Duration(days: 1));
+      }
+      if (ahora.difference(f) > ventana) continue;
+      if (omitida(f)) continue;
+      if (mejor == null || f.isAfter(mejor)) mejor = f;
     }
     return mejor;
   }

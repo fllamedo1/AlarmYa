@@ -111,15 +111,18 @@ class ServicioAudio {
   }
 
   /// Escucha de prueba desde Ajustes (no repite en bucle).
-  Future<void> probar(String archivo) async {
+  Future<void> probar(String archivo, {double volumen = 1.0}) async {
     await parar();
     try {
       await _player.setAudioContext(_contexto());
       await _player.setReleaseMode(ReleaseMode.release);
-      await _player.setVolume(1.0);
+      await _player.setVolume(volumen.clamp(0.0, 1.0));
       await _player.play(AssetSource('sounds/$archivo.wav'));
-    } catch (_) {
-      // silencio si falla
+      Registro.instancia.add(
+        'Audio: prueba $archivo (vol ${(volumen * 100).round()}%)',
+      );
+    } catch (e) {
+      Registro.instancia.add('Audio: ERROR en prueba $archivo -> $e');
     }
   }
 }

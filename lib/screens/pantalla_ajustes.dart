@@ -58,8 +58,10 @@ class _PantallaAjustesState extends State<PantallaAjustes> {
                             ),
                           ),
                           TextButton(
-                            onPressed: () =>
-                                ServicioAudio.instancia.probar(entry.key),
+                            onPressed: () => ServicioAudio.instancia.probar(
+                              entry.key,
+                              volumen: 1.0,
+                            ),
                             child: const Text(
                               'Probar',
                               style: TextStyle(

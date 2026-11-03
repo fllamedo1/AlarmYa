@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 
 import '../models/alarma.dart';
+import '../services/servicio_audio.dart';
 
 const _diasNombre = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 
@@ -338,6 +339,17 @@ class _PantallaEdicionState extends State<PantallaEdicion> {
                       if (v != null) setState(() => _sonido = v);
                     },
                   ),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: OutlinedButton.icon(
+                      icon: const Icon(Icons.volume_up_outlined, size: 18),
+                      label: const Text('Probar sonido y volumen'),
+                      onPressed: () => ServicioAudio.instancia.probar(
+                        _sonido,
+                        volumen: _volumen,
+                      ),
+                    ),
+                  ),
                   Text(
                     'Volumen: ${(_volumen * 100).round()}%',
                     style: const TextStyle(fontSize: 13, color: Color(0xFF666666)),
@@ -355,9 +367,15 @@ class _PantallaEdicionState extends State<PantallaEdicion> {
                       onChanged: (v) => setState(() => _volumen = v),
                     ),
                   ),
-                  const Text(
-                    'El volumen durante la alarma usa este valor. Con el iPhone bloqueado, iOS usa el volumen de notificaciones del sistema.',
-                    style: TextStyle(fontSize: 11.5, color: Color(0xFF999999)),
+                  Text(
+                    'Probá el tono al volumen elegido. Durante una alarma activa '
+                    'se usa este nivel; con el iPhone bloqueado, iOS controla el '
+                    'volumen de la notificación.',
+                    style: const TextStyle(
+                      fontSize: 11.5,
+                      color: Color(0xFF777777),
+                      height: 1.35,
+                    ),
                   ),
                 ],
               ),

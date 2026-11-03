@@ -223,16 +223,17 @@ class ServicioNotificaciones {
     _abrirMisionMap(_decodificarPayload(payload));
 
   void _abrirMisionMap(Map<String, dynamic> mapa) async {
-  final id = mapa['id']?.toString() ?? '';
-  if (id.isEmpty) return;
-  debugPrint('Notificación de alarma abierta: $id');
-  // Matamos los "bip" de reintento pendientes y dejamos armados los
-  // disparos de las próximas semanas (para alarmas que se repiten).
-  await reprogramarDesdeGuardado();
-  if (alAbrirMision == null) {
-    _misionPendiente = id;
-  } else {
-    alAbrirMision?.call(id);
+    final id = mapa['id']?.toString() ?? '';
+    if (id.isEmpty) return;
+    debugPrint('Notificación de alarma abierta: $id');
+    // Matamos los "bip" de reintento pendientes y dejamos armados los
+    // disparos de las próximas semanas (para alarmas que se repiten).
+    await reprogramarDesdeGuardado();
+    if (alAbrirMision == null) {
+      _misionPendiente = id;
+    } else {
+      alAbrirMision?.call(id);
+    }
   }
 
   /// Id de alarma cuya misión quedó pendiente de abrir (arranque frío

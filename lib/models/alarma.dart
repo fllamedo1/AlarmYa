@@ -21,18 +21,18 @@ class Alarma {
   ];
 
   static const sonidos = <String, String>{
-    'klaxon': 'Klaxon (bip doble)',
-    'campana': 'Campana',
-    'beep': 'Beep digital',
-    'radar': 'Radar',
-    'sirena': 'Sirena ascendente',
-    'despertador': 'Despertador clásico',
-    'campanario': 'Campanario',
-    'ascendente': 'Pulso ascendente',
-    'urgente': 'Alerta urgente',
-    'suave': 'Despertar suave',
-    'digital2': 'Digital doble',
-    'clasico': 'Alarma clásica',
+    'klaxon': 'Impacto',
+    'campana': 'Cristal',
+    'beep': 'Pulso',
+    'radar': 'Órbita',
+    'sirena': 'Ascenso',
+    'despertador': 'Despertador',
+    'campanario': 'Campanas',
+    'ascendente': 'Aurora',
+    'urgente': 'Alerta',
+    'suave': 'Amanecer',
+    'digital2': 'Pulsar',
+    'clasico': 'Resonancia',
   };
 
   Alarma({

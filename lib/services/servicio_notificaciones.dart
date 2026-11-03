@@ -226,12 +226,15 @@ class ServicioNotificaciones {
     final id = mapa['id']?.toString() ?? '';
     if (id.isEmpty) return;
     debugPrint('Notificación de alarma abierta: $id');
+    // Registrar la misión antes del primer await evita perderla durante un
+    // arranque en frío: runApp puede consultar la pendiente mientras se
+    // cancelan y reprograman las notificaciones anteriores.
+    _misionPendiente = id;
     // Matamos los "bip" de reintento pendientes y dejamos armados los
     // disparos de las próximas semanas (para alarmas que se repiten).
     await reprogramarDesdeGuardado();
-    if (alAbrirMision == null) {
-      _misionPendiente = id;
-    } else {
+    if (alAbrirMision != null && _misionPendiente == id) {
+      _misionPendiente = null;
       alAbrirMision?.call(id);
     }
   }
@@ -289,7 +292,10 @@ class ServicioNotificaciones {
     );
     final ahora = tz.TZDateTime.now(tz.local);
     final fecha = ahora.add(Duration(minutes: ajustes.snoozeMin));
-    final payload = jsonEncode(<String, dynamic>{'id': idAlarma});
+    final payload = jsonEncode(<String, dynamic>{
+      'id': idAlarma,
+      'origen': 'snooze',
+    });
     await _notificar(
       id: (DateTime.now().millisecondsSinceEpoch ~/ 1000).hashCode.abs(),
       title: '⏰ Pospuesta',

@@ -7,7 +7,9 @@ import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
 
-const int sampleRate = 22050;
+// Notification assets are mastered at 44.1 kHz/16-bit PCM so transients and
+// harmonics stay clear on iPhone speakers and headphones.
+const int sampleRate = 44100;
 
 List<int> u32LE(int v) =>
     [v & 0xFF, (v >> 8) & 0xFF, (v >> 16) & 0xFF, (v >> 24) & 0xFF];

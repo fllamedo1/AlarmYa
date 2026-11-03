@@ -7,6 +7,7 @@ import 'package:sensors_plus/sensors_plus.dart';
 import '../models/alarma.dart';
 import '../services/almacenamiento.dart';
 import '../services/servicio_audio.dart';
+import '../services/servicio_ajustes.dart';
 import '../services/servicio_notificaciones.dart';
 
 /// Pantalla a pantalla completa estilo Alarmy: fondo amarillo a pantalla
@@ -419,14 +420,31 @@ class _PantallaMisionState extends State<PantallaMision> {
   }
 
   Widget _botonPosponer() {
-    return TextButton(
-      onPressed: _posponer,
-      child: const Text(
-        'Posponer',
-        style: TextStyle(
-          color: Color(0xFF999999),
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
+    final minutos = ServicioAjustes.instancia.snoozeMin;
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: SizedBox(
+        width: double.infinity,
+        height: 52,
+        child: OutlinedButton.icon(
+          onPressed: _posponer,
+          icon: const Icon(Icons.snooze_outlined, size: 22),
+          label: Text(
+            'POSPONER $minutos MIN',
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.4,
+            ),
+          ),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: const Color(0xFF7A5A00),
+            side: const BorderSide(color: Color(0xFFFFB300), width: 1.5),
+            backgroundColor: const Color(0xFFFFF8E1),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+          ),
         ),
       ),
     );

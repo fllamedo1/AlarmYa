@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../models/alarma.dart';
+
 /// Ajustes de la app estilo Alarmy, guardados localmente.
 class ServicioAjustes {
   ServicioAjustes._();
@@ -9,12 +11,7 @@ class ServicioAjustes {
 
   static const _clave = 'ajustes_v1';
 
-  static const sonidos = {
-    'klaxon': 'Klaxon (bip doble)',
-    'campana': 'Campana',
-    'beep': 'Beep digital',
-    'radar': 'Radar',
-  };
+  static const sonidos = Alarma.sonidos;
 
   String sonido = 'klaxon';
   bool subirVolumen = true;
@@ -29,7 +26,11 @@ class ServicioAjustes {
     try {
       final m = jsonDecode(bruto) as Map<String, dynamic>;
       final s = (m['sonido'] ?? '').toString();
-      if (sonidos.containsKey(s) || s == 'alarm') sonido = s;
+      if (s == 'alarm') {
+        sonido = 'klaxon';
+      } else if (sonidos.containsKey(s)) {
+        sonido = s;
+      }
       subirVolumen = m['subirVolumen'] is bool ? m['subirVolumen'] as bool : true;
       reintentarBeep =
           m['reintentarBeep'] is bool ? m['reintentarBeep'] as bool : true;

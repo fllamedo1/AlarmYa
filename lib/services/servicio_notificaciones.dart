@@ -180,10 +180,8 @@ class ServicioNotificaciones {
   }
 
   void _alTocar(NotificationResponse r) async {
-    final id = (r.payload == null || r.payload!.isEmpty)
-        ? ''
-        : ((jsonDecode(r.payload!) as Map<String, dynamic>)['id'] ?? '')
-            .toString();
+    final payload = _decodificarPayload(r.payload);
+    final id = payload['id']?.toString() ?? '';
     Registro.instancia.add(
         'Notificación tocada: acción=${r.actionId ?? "abrir"} id=$id');
     if (id.isEmpty) return;
@@ -195,7 +193,7 @@ class ServicioNotificaciones {
         await desactivarAlarma(id);
         break;
       default:
-        _abrirMision(r.payload!);
+        _abrirMisionMap(payload);
     }
   }
 
@@ -210,24 +208,31 @@ class ServicioNotificaciones {
     await reprogramar(alarmas);
   }
 
-  void _abrirMision(String payload) async {
-    try {
-      final mapa = jsonDecode(payload) as Map<String, dynamic>;
-      final id = (mapa['id'] ?? '').toString();
-      if (id.isNotEmpty) {
-        debugPrint('Notificación de alarma abierta: $id');
-        // Matamos los "bip" de reintento pendientes y dejamos armados los
-        // disparos de las próximas semanas (para alarmas que se repiten).
-        await reprogramarDesdeGuardado();
-        if (alAbrirMision == null) {
-          // La app arrancó fría: nadie registró el callback todavía.
-          // Guardamos la misión para que se abra apenas cargue la UI.
-          _misionPendiente = id;
-        } else {
-          alAbrirMision?.call(id);
-        }
-      }
-    } catch (_) {}
+  Map<String, dynamic> _decodificarPayload(String? payload) {
+  if (payload == null || payload.isEmpty) return <String, dynamic>{};
+  try {
+    final decoded = jsonDecode(payload);
+    return decoded is Map<String, dynamic> ? decoded : <String, dynamic>{};
+  } catch (e) {
+    Registro.instancia.add('Notificación: payload inválido -> $e');
+    return <String, dynamic>{};
+  }
+  }
+
+  void _abrirMision(String payload) async =>
+    _abrirMisionMap(_decodificarPayload(payload));
+
+  void _abrirMisionMap(Map<String, dynamic> mapa) async {
+  final id = mapa['id']?.toString() ?? '';
+  if (id.isEmpty) return;
+  debugPrint('Notificación de alarma abierta: $id');
+  // Matamos los "bip" de reintento pendientes y dejamos armados los
+  // disparos de las próximas semanas (para alarmas que se repiten).
+  await reprogramarDesdeGuardado();
+  if (alAbrirMision == null) {
+    _misionPendiente = id;
+  } else {
+    alAbrirMision?.call(id);
   }
 
   /// Id de alarma cuya misión quedó pendiente de abrir (arranque frío

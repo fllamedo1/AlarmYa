@@ -62,7 +62,7 @@ class ServicioAudio {
             }
             nivel = (nivel + alarma.volumen * 0.08).clamp(0.0, alarma.volumen);
             await _player.setVolume(nivel);
-            if (nivel >= 1.0) t.cancel();
+            if (nivel >= alarma.volumen) t.cancel();
           },
         );
       }

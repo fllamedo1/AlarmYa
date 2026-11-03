@@ -20,6 +20,14 @@
 		1A2B3C4D5E6F7A8B9C0D1103 /* campana.wav in Resources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F7A8B9C0D1104 /* campana.wav */; };
 		1A2B3C4D5E6F7A8B9C0D1105 /* beep.wav in Resources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F7A8B9C0D1106 /* beep.wav */; };
 		1A2B3C4D5E6F7A8B9C0D1107 /* radar.wav in Resources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F7A8B9C0D1108 /* radar.wav */; };
+		1A2B3C4D5E6F7A8B9C0D1111 /* sirena.wav in Resources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F7A8B9C0D1112 /* sirena.wav */; };
+		1A2B3C4D5E6F7A8B9C0D1113 /* despertador.wav in Resources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F7A8B9C0D1114 /* despertador.wav */; };
+		1A2B3C4D5E6F7A8B9C0D1115 /* campanario.wav in Resources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F7A8B9C0D1116 /* campanario.wav */; };
+		1A2B3C4D5E6F7A8B9C0D1117 /* ascendente.wav in Resources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F7A8B9C0D1118 /* ascendente.wav */; };
+		1A2B3C4D5E6F7A8B9C0D1119 /* urgente.wav in Resources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F7A8B9C0D1120 /* urgente.wav */; };
+		1A2B3C4D5E6F7A8B9C0D1121 /* suave.wav in Resources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F7A8B9C0D1122 /* suave.wav */; };
+		1A2B3C4D5E6F7A8B9C0D1123 /* digital2.wav in Resources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F7A8B9C0D1124 /* digital2.wav */; };
+		1A2B3C4D5E6F7A8B9C0D1125 /* clasico.wav in Resources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F7A8B9C0D1126 /* clasico.wav */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -67,6 +75,14 @@
 		1A2B3C4D5E6F7A8B9C0D1104 /* campana.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = campana.wav; sourceTree = "<group>"; };
 		1A2B3C4D5E6F7A8B9C0D1106 /* beep.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = beep.wav; sourceTree = "<group>"; };
 		1A2B3C4D5E6F7A8B9C0D1108 /* radar.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = radar.wav; sourceTree = "<group>"; };
+		1A2B3C4D5E6F7A8B9C0D1112 /* sirena.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = sirena.wav; sourceTree = "<group>"; };
+		1A2B3C4D5E6F7A8B9C0D1114 /* despertador.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = despertador.wav; sourceTree = "<group>"; };
+		1A2B3C4D5E6F7A8B9C0D1116 /* campanario.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = campanario.wav; sourceTree = "<group>"; };
+		1A2B3C4D5E6F7A8B9C0D1118 /* ascendente.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = ascendente.wav; sourceTree = "<group>"; };
+		1A2B3C4D5E6F7A8B9C0D1120 /* urgente.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = urgente.wav; sourceTree = "<group>"; };
+		1A2B3C4D5E6F7A8B9C0D1122 /* suave.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = suave.wav; sourceTree = "<group>"; };
+		1A2B3C4D5E6F7A8B9C0D1124 /* digital2.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = digital2.wav; sourceTree = "<group>"; };
+		1A2B3C4D5E6F7A8B9C0D1126 /* clasico.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = clasico.wav; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -136,6 +152,14 @@
 				1A2B3C4D5E6F7A8B9C0D1104 /* campana.wav */,
 				1A2B3C4D5E6F7A8B9C0D1106 /* beep.wav */,
 				1A2B3C4D5E6F7A8B9C0D1108 /* radar.wav */,
+				1A2B3C4D5E6F7A8B9C0D1112 /* sirena.wav */,
+				1A2B3C4D5E6F7A8B9C0D1114 /* despertador.wav */,
+				1A2B3C4D5E6F7A8B9C0D1116 /* campanario.wav */,
+				1A2B3C4D5E6F7A8B9C0D1118 /* ascendente.wav */,
+				1A2B3C4D5E6F7A8B9C0D1120 /* urgente.wav */,
+				1A2B3C4D5E6F7A8B9C0D1122 /* suave.wav */,
+				1A2B3C4D5E6F7A8B9C0D1124 /* digital2.wav */,
+				1A2B3C4D5E6F7A8B9C0D1126 /* clasico.wav */,
 			);
 			path = Runner;
 			sourceTree = "<group>";
@@ -245,6 +269,14 @@
 				1A2B3C4D5E6F7A8B9C0D1103 /* campana.wav in Resources */,
 				1A2B3C4D5E6F7A8B9C0D1105 /* beep.wav in Resources */,
 				1A2B3C4D5E6F7A8B9C0D1107 /* radar.wav in Resources */,
+				1A2B3C4D5E6F7A8B9C0D1111 /* sirena.wav in Resources */,
+				1A2B3C4D5E6F7A8B9C0D1113 /* despertador.wav in Resources */,
+				1A2B3C4D5E6F7A8B9C0D1115 /* campanario.wav in Resources */,
+				1A2B3C4D5E6F7A8B9C0D1117 /* ascendente.wav in Resources */,
+				1A2B3C4D5E6F7A8B9C0D1119 /* urgente.wav in Resources */,
+				1A2B3C4D5E6F7A8B9C0D1121 /* suave.wav in Resources */,
+				1A2B3C4D5E6F7A8B9C0D1123 /* digital2.wav in Resources */,
+				1A2B3C4D5E6F7A8B9C0D1125 /* clasico.wav in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

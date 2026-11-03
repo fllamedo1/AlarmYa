@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/alarma.dart';
+import 'registro.dart';
 
 /// Guarda y carga la lista de alarmas en SharedPreferences.
 class Almacenamiento {
@@ -16,11 +17,19 @@ class Almacenamiento {
     final bruto = prefs.getString(_clave);
     if (bruto == null || bruto.isEmpty) return <Alarma>[];
     try {
-      final lista = jsonDecode(bruto) as List;
-      return lista
-          .map<Alarma>((e) => Alarma.fromMap(e as Map<String, dynamic>))
-          .toList();
-    } catch (_) {
+      final decoded = jsonDecode(bruto);
+      if (decoded is! List) {
+        throw const FormatException('Las alarmas no están guardadas como lista');
+      }
+      final alarmas = <Alarma>[];
+      for (final item in decoded) {
+        if (item is Map<String, dynamic>) {
+          alarmas.add(Alarma.fromMap(item));
+        }
+      }
+      return alarmas;
+    } catch (e) {
+      Registro.instancia.add('Almacenamiento: ERROR al cargar alarmas -> $e');
       return <Alarma>[];
     }
   }

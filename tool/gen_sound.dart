@@ -1,7 +1,8 @@
 // Genera tonos de alarma propios (sin material de terceros).
 // Uso: dart run tool/gen_sound.dart <salida.wav> <tipo>
 // tipos: klaxon (bip doble), campana (campana con decaimiento),
-// beep (pulso corto), radar (barrido de frecuencia)
+// beep (pulso corto), radar (barrido de frecuencia), sirena, despertador,
+// campanario, ascendente, urgente, suave, digital2, clasico
 import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
@@ -78,6 +79,91 @@ List<int> generar(String tipo) {
         final env = envolvente(p, ciclo, 0.02, 0.1);
         fases[0] += 2 * pi * f / sampleRate;
         s = sin(fases[0]) * 0.8 * env;
+        break;
+      case 'sirena':
+        const ciclo = 2.2;
+        final p = t % ciclo;
+        final u = p / ciclo;
+        final f = 520.0 + 760.0 * (0.5 - (u - 0.5).abs()) * 2;
+        final env = envolvente(p, ciclo, 0.03, 0.12);
+        fases[0] += 2 * pi * f / sampleRate;
+        s = (sin(fases[0]) + 0.25 * sin(fases[0] * 2)) * 0.72 * env;
+        break;
+      case 'despertador':
+        const ciclo = 2.4;
+        final p = t % ciclo;
+        if (p < 0.7) {
+          final env = envolvente(p, 0.7, 0.015, 0.08);
+          fases[0] += 2 * pi * 880.0 / sampleRate;
+          fases[1] += 2 * pi * 1320.0 / sampleRate;
+          s = (sin(fases[0]) + 0.35 * sin(fases[1])) * 0.72 * env;
+        }
+        break;
+      case 'campanario':
+        const ciclo = 3.0;
+        final p = t % ciclo;
+        if (p < 2.0) {
+          final env = exp(-2.2 * p);
+          fases[0] += 2 * pi * 660.0 / sampleRate;
+          fases[1] += 2 * pi * 990.0 / sampleRate;
+          fases[2] += 2 * pi * 1320.0 / sampleRate;
+          s = (sin(fases[0]) * 0.62 +
+                  sin(fases[1]) * 0.28 +
+                  sin(fases[2]) * 0.12) *
+              env;
+        }
+        break;
+      case 'ascendente':
+        const ciclo = 2.0;
+        final p = t % ciclo;
+        final f = 420.0 + 1100.0 * (p / ciclo);
+        final env = envolvente(p, ciclo, 0.02, 0.1);
+        fases[0] += 2 * pi * f / sampleRate;
+        s = (sin(fases[0]) + 0.2 * sin(fases[0] * 2)) * 0.78 * env;
+        break;
+      case 'urgente':
+        const ciclo = 1.1;
+        final p = t % ciclo;
+        if (p < 0.84) {
+          final bloque = (p / 0.28).floor();
+          final local = p % 0.28;
+          final f = bloque.isEven ? 1250.0 : 930.0;
+          final env = envolvente(local, 0.28, 0.008, 0.035);
+          fases[0] += 2 * pi * f / sampleRate;
+          s = (sin(fases[0]) + 0.18 * sin(fases[0] * 2)) * 0.82 * env;
+        }
+        break;
+      case 'suave':
+        const ciclo = 4.0;
+        final p = t % ciclo;
+        if (p < 1.8) {
+          final f = 440.0 + 440.0 * min(1.0, p / 1.6);
+          final env = envolvente(p, 1.8, 0.08, 0.35);
+          fases[0] += 2 * pi * f / sampleRate;
+          fases[1] += 2 * pi * f * 1.5 / sampleRate;
+          s = (sin(fases[0]) + 0.3 * sin(fases[1])) * 0.58 * env;
+        }
+        break;
+      case 'digital2':
+        const ciclo = 1.0;
+        final p = t % ciclo;
+        if (p < 0.16 || (p >= 0.32 && p < 0.48)) {
+          final local = p < 0.16 ? p : p - 0.32;
+          final env = envolvente(local, 0.16, 0.004, 0.025);
+          fases[0] += 2 * pi * 1180.0 / sampleRate;
+          s = sin(fases[0]) * 0.82 * env;
+        }
+        break;
+      case 'clasico':
+        const ciclo = 3.0;
+        final p = t % ciclo;
+        if (p < 0.5 || (p >= 0.8 && p < 1.3)) {
+          final local = p < 0.5 ? p : p - 0.8;
+          final env = envolvente(local, 0.5, 0.012, 0.06);
+          fases[0] += 2 * pi * 740.0 / sampleRate;
+          fases[1] += 2 * pi * 1110.0 / sampleRate;
+          s = (sin(fases[0]) + 0.28 * sin(fases[1])) * 0.78 * env;
+        }
         break;
     }
 

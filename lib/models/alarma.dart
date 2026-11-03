@@ -10,6 +10,14 @@ class Alarma {
     'campana': 'Campana',
     'beep': 'Beep digital',
     'radar': 'Radar',
+    'sirena': 'Sirena ascendente',
+    'despertador': 'Despertador clásico',
+    'campanario': 'Campanario',
+    'ascendente': 'Pulso ascendente',
+    'urgente': 'Alerta urgente',
+    'suave': 'Despertar suave',
+    'digital2': 'Digital doble',
+    'clasico': 'Alarma clásica',
   };
 
   Alarma({
@@ -127,9 +135,10 @@ class Alarma {
 
   String encode() => jsonEncode(toMap());
 
-  static Alarma decode(String s) => Alarma.fromMap(
-        jsonDecode(s) is Map<String, dynamic>
-            ? jsonDecode(s) as Map<String, dynamic>
-            : <String, dynamic>{},
-      );
+  static Alarma decode(String s) {
+    final decoded = jsonDecode(s);
+    return Alarma.fromMap(
+      decoded is Map<String, dynamic> ? decoded : <String, dynamic>{},
+    );
+  }
 }

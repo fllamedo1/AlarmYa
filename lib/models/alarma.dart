@@ -5,6 +5,21 @@ enum TipoMision { ninguna, matematica, sacudir }
 enum Dificultad { facil, media, dificil }
 
 class Alarma {
+  static const nombresSugeridos = <String>[
+    'Despertar',
+    'Trabajo',
+    'Estudio',
+    'Gimnasio',
+    'Medicamento',
+    'Reunión',
+    'Clases',
+    'Viaje',
+    'Salir de casa',
+    'Dormir',
+    'Siesta',
+    'Fin de descanso',
+  ];
+
   static const sonidos = <String, String>{
     'klaxon': 'Klaxon (bip doble)',
     'campana': 'Campana',

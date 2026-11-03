@@ -82,4 +82,9 @@ void main() {
       expect(nombre, matches(RegExp(r'^[a-z0-9]+$')));
     }
   });
+
+  test('ofrece nombres útiles para alarmas', () {
+    expect(Alarma.nombresSugeridos, contains('Trabajo'));
+    expect(Alarma.nombresSugeridos, contains('Medicamento'));
+  });
 }

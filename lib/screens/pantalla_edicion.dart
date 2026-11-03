@@ -142,14 +142,40 @@ class _PantallaEdicionState extends State<PantallaEdicion> {
           Card(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(18, 4, 18, 12),
-              child: TextField(
-                controller: _titulo,
-                decoration: const InputDecoration(
-                  border: InputBorder.none,
-                  hintText: 'Nombre de la alarma (ej: Despertar)',
-                  hintStyle: TextStyle(color: Color(0xFFBBBBBB), fontSize: 14),
-                ),
-                style: const TextStyle(fontSize: 15),
+              child: Column(
+                children: [
+                  TextField(
+                    controller: _titulo,
+                    decoration: const InputDecoration(
+                      border: InputBorder.none,
+                      hintText: 'Nombre de la alarma',
+                      hintStyle:
+                          TextStyle(color: Color(0xFFBBBBBB), fontSize: 14),
+                    ),
+                    style: const TextStyle(fontSize: 15),
+                  ),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Wrap(
+                      spacing: 6,
+                      runSpacing: 4,
+                      children: [
+                        for (final nombre in Alarma.nombresSugeridos)
+                          ActionChip(
+                            label: Text(nombre),
+                            visualDensity: VisualDensity.compact,
+                            onPressed: () {
+                              _titulo.text = nombre;
+                              _titulo.selection = TextSelection.collapsed(
+                                offset: _titulo.text.length,
+                              );
+                              setState(() {});
+                            },
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
           ),

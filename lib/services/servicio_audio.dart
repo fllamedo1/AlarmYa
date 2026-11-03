@@ -23,11 +23,13 @@ class ServicioAudio {
   final _player = AudioPlayer(); // alarma real
   final _keeper = AudioPlayer(); // audio silencioso de fondo
   bool _sonando = false;
+  bool _previsualizando = false;
   bool _guardianActivo = false;
   Timer? _subidaVolumen;
 
   bool get guardianActivo => _guardianActivo;
   bool get sonando => _sonando;
+  bool get previsualizando => _previsualizando;
 
   AudioContext _contexto() => AudioContext(
         iOS: AudioContextIOS(
@@ -73,12 +75,12 @@ class ServicioAudio {
   }
 
   Future<void> parar() async {
-    if (!_sonando) return;
     _subidaVolumen?.cancel();
     try {
       await _player.stop();
     } finally {
       _sonando = false;
+      _previsualizando = false;
     }
   }
 
@@ -118,11 +120,20 @@ class ServicioAudio {
       await _player.setReleaseMode(ReleaseMode.release);
       await _player.setVolume(volumen.clamp(0.0, 1.0));
       await _player.play(AssetSource('sounds/$archivo.wav'));
+      _previsualizando = true;
       Registro.instancia.add(
         'Audio: prueba $archivo (vol ${(volumen * 100).round()}%)',
       );
     } catch (e) {
+      _previsualizando = false;
       Registro.instancia.add('Audio: ERROR en prueba $archivo -> $e');
     }
+  }
+
+  Future<void> detenerPrueba() async {
+    if (!_previsualizando) return;
+    await _player.stop();
+    _previsualizando = false;
+    Registro.instancia.add('Audio: prueba detenida');
   }
 }

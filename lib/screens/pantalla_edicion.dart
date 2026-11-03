@@ -27,6 +27,7 @@ class _PantallaEdicionState extends State<PantallaEdicion> {
   late String _sonido;
   late double _volumen;
   late Set<int> _dias;
+  bool _probandoSonido = false;
 
   @override
   void initState() {
@@ -47,8 +48,18 @@ class _PantallaEdicionState extends State<PantallaEdicion> {
 
   @override
   void dispose() {
+    ServicioAudio.instancia.detenerPrueba();
     _titulo.dispose();
     super.dispose();
+  }
+
+  Future<void> _alternarPruebaSonido() async {
+    if (_probandoSonido) {
+      await ServicioAudio.instancia.detenerPrueba();
+    } else {
+      await ServicioAudio.instancia.probar(_sonido, volumen: _volumen);
+    }
+    if (mounted) setState(() => _probandoSonido = !_probandoSonido);
   }
 
   Future<void> _elegirHora() async {
@@ -342,12 +353,18 @@ class _PantallaEdicionState extends State<PantallaEdicion> {
                   Align(
                     alignment: Alignment.centerRight,
                     child: OutlinedButton.icon(
-                      icon: const Icon(Icons.volume_up_outlined, size: 18),
-                      label: const Text('Probar sonido y volumen'),
-                      onPressed: () => ServicioAudio.instancia.probar(
-                        _sonido,
-                        volumen: _volumen,
+                      icon: Icon(
+                        _probandoSonido
+                            ? Icons.stop_circle_outlined
+                            : Icons.volume_up_outlined,
+                        size: 18,
                       ),
+                      label: Text(
+                        _probandoSonido
+                            ? 'Detener sonido'
+                            : 'Probar sonido y volumen',
+                      ),
+                      onPressed: _alternarPruebaSonido,
                     ),
                   ),
                   Text(

@@ -47,11 +47,11 @@ jobs:
           mkdir -p build/ios/iphoneos/Payload
           cp -r "$APP_PATH" build/ios/iphoneos/Payload/
           cd build/ios/iphoneos
-          zip -qry AlarmYa-unsigned.ipa Payload
+          zip -qry AlarmIA-unsigned.ipa Payload
 
       - name: Subir IPA como artifact
         uses: actions/upload-artifact@v4
         with:
-          name: AlarmYa-ipa
-          path: build/ios/iphoneos/AlarmYa-unsigned.ipa
+          name: AlarmIA-ipa
+          path: build/ios/iphoneos/AlarmIA-unsigned.ipa
           retention-days: 30

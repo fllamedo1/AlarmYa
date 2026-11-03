@@ -1,4 +1,4 @@
-# AlarmYa
+# AlarmIA
 
 Copia de alarma tipo Alarmy para iPhone, construida con Flutter. Código 100% propio, sin sonidos ni assets de terceros.
 
@@ -44,16 +44,16 @@ git push -u origin main
 ### 2. Esperá la compilación (5–15 min)
 
 - GitHub → tu repo → pestaña **Actions** → job `build-ios`.
-- Al terminar, descargá el artifact **`AlarmYa-ipa`** → queda `AlarmYa-unsigned.ipa`.
+- Al terminar, descargá el artifact **`AlarmIA-ipa`** → queda `AlarmIA-unsigned.ipa`.
 
 ### 3. Instalala en tu iPhone desde esta PC
 
 1. Instalá **iTunes de Apple** (https://www.apple.com/itunes/download/win64/) para los drivers USB, o la app **Apple Devices** desde Microsoft Store.
 2. Instalá **Sideloadly**: https://sideloadly.io
 3. Conectá el iPhone por USB → desbloquealo → *Confiar* en la PC.
-4. Sideloadly → arrastrá `AlarmYa-unsigned.ipa` → poné tu **Apple ID** → *Start* (pide otra vez la contraseña por popup de Apple).
+4. Sideloadly → arrastrá `AlarmIA-unsigned.ipa` → poné tu **Apple ID** → *Start* (pide otra vez la contraseña por popup de Apple).
 5. Primer vez: en el iPhone → **Ajustes → General → VPN y gestión de dispositivos → confiar** en tu Apple ID.
-6. Abrí AlarmYa → permití notificaciones.
+6. Abrí AlarmIA → permití notificaciones.
 
 ### 4. Que suene aunque haya "No Molestar"
 

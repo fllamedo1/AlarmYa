@@ -15,17 +15,17 @@ void main() async {
   // Las notificaciones pendientes se pierden al reinstalar la IPA o si iOS
   // las purga; restaurarlas al arrancar evita depender solo del vigilante.
   await ServicioNotificaciones.instancia.reprogramarDesdeGuardado();
-  runApp(const AlarmYaApp());
+  runApp(const AlarmIAApp());
 }
 
-class AlarmYaApp extends StatefulWidget {
-  const AlarmYaApp({super.key});
+class AlarmIAApp extends StatefulWidget {
+  const AlarmIAApp({super.key});
 
   @override
-  State<AlarmYaApp> createState() => _AlarmYaAppState();
+  State<AlarmIAApp> createState() => _AlarmIAAppState();
 }
 
-class _AlarmYaAppState extends State<AlarmYaApp> {
+class _AlarmIAAppState extends State<AlarmIAApp> {
   final navigatorKey = GlobalKey<NavigatorState>();
 
   @override
@@ -53,7 +53,7 @@ class _AlarmYaAppState extends State<AlarmYaApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'AlarmYa',
+      title: 'AlarmIA',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,

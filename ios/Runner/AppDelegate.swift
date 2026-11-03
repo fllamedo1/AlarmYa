@@ -15,7 +15,7 @@ import UserNotifications
       try session.setCategory(.playback, mode: .default, options: [])
       try session.setActive(true)
     } catch {
-      print("AlarmYa: no se pudo activar AVAudioSession: \(error)")
+      print("AlarmIA: no se pudo activar AVAudioSession: \(error)")
     }
 
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
@@ -28,7 +28,7 @@ import UserNotifications
 
 @available(iOS 16.0, *)
 struct CrearAlarmaIntent: AppIntent {
-  static let title: LocalizedStringResource = "Crear alarma en AlarmYa"
+  static let title: LocalizedStringResource = "Crear alarma en AlarmIA"
   static let description = IntentDescription(
     "Crea una alarma de una sola vez con la hora y el nombre indicados."
   )
@@ -110,7 +110,7 @@ struct CrearAlarmaIntent: AppIntent {
 }
 
 @available(iOS 16.0, *)
-struct AlarmYaShortcuts: AppShortcutsProvider {
+struct AlarmIShortcuts: AppShortcutsProvider {
   static var appShortcuts: [AppShortcut] {
     AppShortcut(
       intent: CrearAlarmaIntent(),

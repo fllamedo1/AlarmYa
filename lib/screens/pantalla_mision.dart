@@ -197,7 +197,7 @@ class _PantallaMisionState extends State<PantallaMision> {
             children: [
               const Spacer(),
               Text(
-                titulo.isEmpty ? 'AlarmYa' : titulo,
+                titulo.isEmpty ? 'AlarmIA' : titulo,
                 style: TextStyle(
                   color: Colors.black.withOpacity(0.55),
                   fontSize: 15,

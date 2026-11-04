@@ -152,6 +152,14 @@ class ServicioNotificaciones {
         final retraso = ahora.difference(rec).inSeconds;
         Registro.instancia.add(
             'Vigilante: DISPARO alarma ${a.id} (retraso ${retraso}s)');
+        // Alarmas de una sola vez: se apagan después de sonar.
+        // Las que repiten días quedan armadas para la próxima.
+        if (a.dias.isEmpty) {
+          a.activa = false;
+          await Almacenamiento.instancia.guardar(alarmas);
+          Registro.instancia
+              .add('Alarma de una sola vez desactivada (no repite)');
+        }
         // Re-arma las próximas ocurrencias (descarta la ya sonada).
         await reprogramar(alarmas);
         // Abrir la misión inmediatamente.

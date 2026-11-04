@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../services/servicio_ajustes.dart';
 import '../services/servicio_audio.dart';
+import '../services/servicio_musica.dart';
 
 /// Pantalla de Ajustes estilo Alarmy: tono de alarma, volumen gradual,
 /// reintento de beeps y duración del posponer.
@@ -71,6 +72,109 @@ class _PantallaAjustesState extends State<PantallaAjustes> {
                       ),
                     ),
                   ),
+              ],
+            ),
+          ),
+          if (_a.sonido == 'musica')
+            Padding(
+              padding: const EdgeInsets.only(top: 10, left: 6),
+              child: Text(
+                'La música suena cuando la alarma abre la app. '
+                'Para la notificación iOS se usa un tono corto.',
+                style: TextStyle(
+                    fontSize: 11.5, color: Colors.grey[600]),
+              ),
+            ),
+          const SizedBox(height: 16),
+          const _TituloSeccion('MÚSICA REAL (TUS CANCIONES)'),
+          Card(
+            child: Column(
+              children: [
+                for (final cancion in _a.canciones)
+                  InkWell(
+                    borderRadius: BorderRadius.circular(16),
+                    onTap: () async {
+                      _a.sonido = 'musica';
+                      _a.cancionActiva = cancion['id']!;
+                      await _guardar();
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 10),
+                      child: Row(
+                        children: [
+                          Icon(
+                            _a.sonido == 'musica' &&
+                                    _a.cancionActiva == cancion['id']
+                                ? Icons.radio_button_checked
+                                : Icons.radio_button_unchecked,
+                            color: _a.sonido == 'musica' &&
+                                    _a.cancionActiva == cancion['id']
+                                ? const Color(0xFFFFB300)
+                                : const Color(0xFFCCCCCC),
+                          ),
+                          const SizedBox(width: 12),
+                          const Icon(Icons.music_note,
+                              size: 18, color: Color(0xFF888888)),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              cancion['nombre'] ?? 'canción',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontSize: 14.5),
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () =>
+                                ServicioAudio.instancia.probar('musica'),
+                            child: const Text(
+                              'Probar',
+                              style: TextStyle(
+                                  color: Color(0xFFFFB300),
+                                  fontWeight: FontWeight.w700),
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.close,
+                                size: 20, color: Color(0xFF999999)),
+                            onPressed: () async {
+                              await ServicioMusica.instancia
+                                  .eliminar(cancion['id']!);
+                              if (mounted) setState(() {});
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ListTile(
+                  leading: const Icon(Icons.add, color: Color(0xFFFFB300)),
+                  title: Text(
+                    _a.canciones.isEmpty
+                        ? 'Elegir canción del iPhone'
+                        : 'Agregar otra canción',
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFFE5A100)),
+                  ),
+                  subtitle: const Text('MP3, M4A, WAV… la canción se '
+                      'guarda dentro de la app y suena en bucle',
+                      style: TextStyle(fontSize: 12)),
+                  onTap: () async {
+                    final nombre =
+                        await ServicioMusica.instancia.importarCancion();
+                    if (nombre == null) return;
+                    await _guardar();
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                            content: Text('Canción agregada: $nombre')),
+                      );
+                    }
+                    if (mounted) setState(() {});
+                  },
+                ),
               ],
             ),
           ),

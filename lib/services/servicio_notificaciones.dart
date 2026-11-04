@@ -64,7 +64,7 @@ class ServicioNotificaciones {
           // iOS solo acepta como sonido de notificación un recurso ya
           // incluido en el bundle. La música importada se reproduce al abrir
           // la misión; mientras el teléfono está bloqueado usamos el fallback.
-          sound: '${alarma.archivoSonido == null ? alarma.sonido : 'klaxon'}.wav',
+          sound: '${_sonidoNotificacion(alarma)}.wav',
           interruptionLevel: InterruptionLevel.timeSensitive,
           categoryIdentifier: _categoriaAlarma,
           presentAlert: true,
@@ -73,6 +73,12 @@ class ServicioNotificaciones {
           presentSound: true,
         ),
       );
+
+  String _sonidoNotificacion(Alarma alarma) {
+    if (alarma.archivoSonido != null) return 'klaxon';
+    if (!Alarma.sonidos.containsKey(alarma.sonido)) return 'klaxon';
+    return alarma.sonido;
+  }
 
   Future<void> inicializar() async {
     if (_listo) return;

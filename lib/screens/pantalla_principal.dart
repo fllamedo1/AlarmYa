@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../models/alarma.dart';
@@ -9,6 +11,17 @@ import 'pantalla_diagnostico.dart';
 import 'pantalla_edicion.dart';
 
 const _diasCortos = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
+
+String _cuentaAtras(DateTime fecha, DateTime ahora) {
+  final d = fecha.difference(ahora);
+  if (d.isNegative) return 'ahora';
+  if (d.inDays > 0) {
+    return 'en ${d.inDays}d ${d.inHours % 24}h';
+  }
+  if (d.inHours > 0) return 'en ${d.inHours}h ${d.inMinutes % 60}m';
+  if (d.inMinutes > 0) return 'en ${d.inMinutes}m ${d.inSeconds % 60}s';
+  return 'en ${d.inSeconds}s';
+}
 
 String _textoMision(TipoMision m) {
   switch (m) {
@@ -41,11 +54,22 @@ class PantallaPrincipal extends StatefulWidget {
 
 class _PantallaPrincipalState extends State<PantallaPrincipal> {
   List<Alarma> _alarmas = <Alarma>[];
+  DateTime _ahora = DateTime.now();
+  Timer? _reloj;
 
   @override
   void initState() {
     super.initState();
     _cargar();
+    _reloj = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() => _ahora = DateTime.now());
+    });
+  }
+
+  @override
+  void dispose() {
+    _reloj?.cancel();
+    super.dispose();
   }
 
   Future<void> _cargar() async {
@@ -112,7 +136,7 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Alarm'),
+        title: const Text('AlarmIA'),
         actions: [
           IconButton(
             tooltip: 'Diagnóstico',
@@ -149,6 +173,7 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
               separatorBuilder: (_, __) => const SizedBox(height: 8),
               itemBuilder: (context, i) => _TarjetaAlarma(
                 alarma: _alarmas[i],
+                ahora: _ahora,
                 onToggle: (v) {
                   _alarmas[i].activa = v;
                   _aplicarCambios();
@@ -178,6 +203,7 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
 class _TarjetaAlarma extends StatelessWidget {
   const _TarjetaAlarma({
     required this.alarma,
+    required this.ahora,
     required this.onToggle,
     required this.onOpen,
     required this.onDelete,
@@ -185,6 +211,7 @@ class _TarjetaAlarma extends StatelessWidget {
   });
 
   final Alarma alarma;
+  final DateTime ahora;
   final ValueChanged<bool> onToggle;
   final VoidCallback onOpen;
   final VoidCallback onDelete;
@@ -197,7 +224,10 @@ class _TarjetaAlarma extends StatelessWidget {
     final texto =
         alarma.titulo.isEmpty ? 'Alarma' : (alarma.titulo);
     final omitir = alarma.omitirHasta;
-    final omitidoProximo = omitir != null && omitir.isAfter(DateTime.now());
+    final omitidoProximo = omitir != null && omitir.isAfter(ahora);
+    final proxima = activo
+        ? ServicioNotificaciones.proximaDe(alarma, ahora)
+        : null;
 
     return Dismissible(
       key: Key(alarma.id),
@@ -241,6 +271,18 @@ class _TarjetaAlarma extends StatelessWidget {
                           fontSize: 13,
                           color: Color(0xFF888888),
                         ),
+                        if (proxima != null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 5),
+                            child: Text(
+                              'Suena ${_cuentaAtras(proxima, ahora)}',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFFE5A100),
+                              ),
+                            ),
+                          ),
                       ),
                       const SizedBox(height: 10),
                       Row(

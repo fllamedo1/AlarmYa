@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:audioplayers/audioplayers.dart';
 
@@ -49,10 +50,17 @@ class ServicioAudio {
       // si no, va a 1.0 de golpe. Nunca fuerza 1.0 antes de tocar.
       var nivelInicial = alarma.volumen * (ajustes.subirVolumen ? 0.5 : 1.0);
       await _player.setVolume(nivelInicial);
-      if (archivo == null) {
-        await _player.play(AssetSource('sounds/${alarma.sonido}.wav'));
+      if (archivo != null && await File(archivo).exists()) {
+        try {
+          await _player.play(DeviceFileSource(archivo));
+        } catch (e) {
+          Registro.instancia.add(
+            'Audio: música importada no disponible, uso fallback -> $e',
+          );
+          await _player.play(AssetSource('sounds/${alarma.sonido}.wav'));
+        }
       } else {
-        await _player.play(DeviceFileSource(archivo));
+        await _player.play(AssetSource('sounds/${alarma.sonido}.wav'));
       }
       Registro.instancia.add(
         'Audio: alarma sonando (${archivo ?? alarma.sonido}, vol $nivelInicial)',
@@ -129,10 +137,17 @@ class ServicioAudio {
       await _player.setAudioContext(_contexto());
       await _player.setReleaseMode(ReleaseMode.release);
       await _player.setVolume(volumen.clamp(0.0, 1.0));
-      if (ruta == null) {
-        await _player.play(AssetSource('sounds/$archivo.wav'));
+      if (ruta != null && await File(ruta).exists()) {
+        try {
+          await _player.play(DeviceFileSource(ruta));
+        } catch (e) {
+          Registro.instancia.add(
+            'Audio: prueba importada falló, uso tono incluido -> $e',
+          );
+          await _player.play(AssetSource('sounds/$archivo.wav'));
+        }
       } else {
-        await _player.play(DeviceFileSource(ruta));
+        await _player.play(AssetSource('sounds/$archivo.wav'));
       }
       _previsualizando = true;
       Registro.instancia.add(

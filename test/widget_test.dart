@@ -53,7 +53,7 @@ void main() {
       id: 'alarma-sonido',
       hora: 8,
       minuto: 15,
-      sonido: 'radar',
+      sonido: 'alarma_sirena_ia',
       volumen: 0.4,
     );
 
@@ -92,9 +92,10 @@ void main() {
   });
 
   test('ofrece sonidos completos y válidos para notificaciones iOS', () {
-    expect(Alarma.sonidos.length, greaterThanOrEqualTo(100));
+    expect(Alarma.sonidos.length, 6);
+    expect(Alarma.sonidos.keys, isNot(contains('tono01')));
     for (final nombre in Alarma.sonidos.keys) {
-      expect(nombre, matches(RegExp(r'^[a-z0-9]+$')));
+      expect(nombre, matches(RegExp(r'^[a-z0-9_]+$')));
     }
   });
 

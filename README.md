@@ -1,6 +1,6 @@
 # AlarmIA
 
-Copia de alarma tipo Alarmy para iPhone, construida con Flutter. Código 100% propio, sin sonidos ni assets de terceros.
+Copia de alarma tipo Alarmy para iPhone, construida con Flutter. La biblioteca incluida usa sonidos de alarma generados por IA/procedurales publicados por SFXMint bajo CC0 1.0.
 
 ## Qué hace
 
@@ -11,7 +11,8 @@ Copia de alarma tipo Alarmy para iPhone, construida con Flutter. Código 100% pr
   - **Botón**: detener directo (sin dificultad).
   - **Matemática**: 3 dificultades (fácil / media / difícil), cuenta nueva si fallás.
   - **Sacudir**: acelerómetro en vivo, 5–40 sacudidas configurables.
-- Sonido de alarma generado programáticamente (ver `tool/gen_sound.dart`), reemplazable por cualquier `.wav` ≤ 30 s.
+- Biblioteca de sonidos de alarma realistas: sirenas, campana y reloj generados por IA/procedurales, sin los tonos polifónicos anteriores.
+- La música propia importada desde Archivos se reproduce dentro de la app; las notificaciones con el iPhone bloqueado usan siempre `despertador.wav`, un WAV corto incluido en el bundle iOS y compatible con el sistema de notificaciones. El sonido elegido se reproduce al abrir la misión.
 
 ## Limitaciones honestas (iOS)
 
@@ -66,6 +67,18 @@ Cada ~6–7 días:
 2. Sideloadly → arrastrá el mismo IPA → re-firmar (borra los datos de la app si cambia el bundle id; con mismo bundle id se re-firma in place).
 
 Sin esa rutina, iOS borra o desactiva la app al vencer el perfil. Con una cuenta desarrollador de Apple (US$99/año) el intervalo pasa a ~1 año y activa en Ajustes aunque no esté el IPA a mano.
+
+## Biblioteca de sonidos
+
+Los sonidos incluidos son recursos CC0 1.0 de SFXMint. Se descargaron como WAV PCM y se registran también en `ios/Runner/` para que las notificaciones locales puedan reproducirlos con la pantalla bloqueada:
+
+- `alarma_sirena_ia.wav` — nuclear alarm 08 — SHA-256 `EE7B7A7ECAC20F8A52E4A82A79C38B0941EAAB12792AFCBCCD1B9A371BA1E29A`
+- `alarma_reloj_ia.wav` — office alarm clock 17 — SHA-256 `5EA281DDE7D80B2C77E0EE7E0E75B85BC65648FD519E0C8260842D619FC1E11A`
+- `alarma_campana_ia.wav` — bell toll 10 — SHA-256 `597CFCF954373832531C5CE78679820F555612DEB94D93935BC32EA657A2ED4E`
+- `alarma_sirena_urbana_ia.wav` — burglar alarm 10 — SHA-256 `699018B97F6D7836ED27523DC0E563A791280DBF01DBC4A231AC494BEE68E262`
+- `alarma_auto_ia.wav` — car alarm 04 — SHA-256 `A79D7F138DE47BE4B36ECEDA748A09401A347CF3A8C0611455D58C72684BF0D3`
+
+Fuente y licencia: https://sfxmint.com/ y https://github.com/sfxmint/sfxmint-mcp. CC0 1.0 permite redistribución y uso comercial sin atribución obligatoria. Se conserva el nombre descriptivo en el catálogo para no confundir estos SFX con canciones completas.
 
 ## Cambiar el tono de alarma
 

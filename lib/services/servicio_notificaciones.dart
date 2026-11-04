@@ -41,6 +41,11 @@ class ServicioNotificaciones {
   static const _vigilanciaCada = Duration(seconds: 5);
 
   static const _categoriaAlarma = 'ALARMA_CAT';
+  // Este recurso corto y mono está incluido en el target iOS desde las
+  // primeras versiones. Se usa siempre para la notificación bloqueada:
+  // iOS no permite depender de una ruta importada y algunos dispositivos
+  // rechazan ciertos WAV personalizados aunque sean reproducibles en Flutter.
+  static const _sonidoBloqueado = 'despertador';
 
   /// Callback que la app registra; se invoca con el id de la alarma cuando
   /// toca dispararla (notificación tocada o vigilante).
@@ -59,12 +64,13 @@ class ServicioNotificaciones {
     await programarSnooze(idAlarma);
   }
 
-  NotificationDetails _detalles(Alarma alarma) => NotificationDetails(
+  NotificationDetails _detalles() => NotificationDetails(
         iOS: DarwinNotificationDetails(
           // iOS solo acepta como sonido de notificación un recurso ya
-          // incluido en el bundle. La música importada se reproduce al abrir
-          // la misión; mientras el teléfono está bloqueado usamos el fallback.
-          sound: '${_sonidoNotificacion(alarma)}.wav',
+          // incluido en el bundle. Usamos siempre el WAV mono conocido para
+          // que la alarma siga sonando aunque el sonido elegido sea importado
+          // o un formato que iOS no acepte en una notificación bloqueada.
+          sound: '$_sonidoBloqueado.wav',
           interruptionLevel: InterruptionLevel.timeSensitive,
           categoryIdentifier: _categoriaAlarma,
           presentAlert: true,
@@ -73,12 +79,6 @@ class ServicioNotificaciones {
           presentSound: true,
         ),
       );
-
-  String _sonidoNotificacion(Alarma alarma) {
-    if (alarma.archivoSonido != null) return 'klaxon';
-    if (!Alarma.sonidos.containsKey(alarma.sonido)) return 'klaxon';
-    return alarma.sonido;
-  }
 
   Future<void> inicializar() async {
     if (_listo) return;
@@ -343,7 +343,7 @@ class ServicioNotificaciones {
       title: '⏰ Pospuesta',
       body: 'Suena en ${ajustes.snoozeMin} min…',
       fecha: fecha,
-      detalles: _detalles(alarma),
+      detalles: _detalles(),
       payload: payload,
     );
   }
@@ -363,7 +363,7 @@ class ServicioNotificaciones {
         title: titulo,
         body: cuerpo,
         fecha: fecha,
-        detalles: _detalles(a),
+        detalles: _detalles(),
         payload: payload,
       );
       await _programarReintentos(a, fecha, 0, titulo, cuerpo, payload);
@@ -389,7 +389,7 @@ class ServicioNotificaciones {
           title: titulo,
           body: cuerpo,
           fecha: fecha,
-          detalles: _detalles(a),
+          detalles: _detalles(),
           payload: payload,
           semanal: true,
         );
@@ -453,7 +453,7 @@ class ServicioNotificaciones {
         title: titulo,
         body: cuerpo,
         fecha: fecha,
-        detalles: _detalles(a),
+        detalles: _detalles(),
         payload: payload,
       );
     }

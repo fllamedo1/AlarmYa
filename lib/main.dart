@@ -12,6 +12,11 @@ void main() async {
   Registro.instancia.add('App iniciada');
   await ServicioNotificaciones.instancia.inicializar();
   await ServicioAjustes.instancia.cargar();
+  // Autorizar el sonido antes de crear las solicitudes. En el primer
+  // arranque, programar antes de pedir permiso puede dejar notificaciones
+  // pendientes sin audio en iOS.
+  final permiso = await ServicioNotificaciones.instancia.pedirPermiso();
+  Registro.instancia.add('Permiso notificaciones: $permiso');
   // Las notificaciones pendientes se pierden al reinstalar la IPA o si iOS
   // las purga; restaurarlas al arrancar evita depender solo del vigilante.
   await ServicioNotificaciones.instancia.reprogramarDesdeGuardado();
@@ -44,10 +49,6 @@ class _AlarmIAAppState extends State<AlarmIAApp> {
     if (pendiente != null) {
       ServicioNotificaciones.instancia.alAbrirMision?.call(pendiente);
     }
-    // Pedir permiso de notificaciones al primer arranque.
-    ServicioNotificaciones.instancia.pedirPermiso().then((ok) {
-      Registro.instancia.add('Permiso notificaciones: $ok');
-    });
   }
 
   @override

@@ -63,6 +63,21 @@ void main() {
     expect(restaurada.volumen, closeTo(0.4, 0.001));
   });
 
+  test('persiste música importada y fecha de alarma única', () {
+    final original = Alarma(
+      id: 'alarma-musica',
+      hora: 8,
+      minuto: 15,
+      archivoSonido: '/var/mobile/Media/alarma.m4a',
+      fechaUnicaIso: '2026-11-03T08:15:00.000',
+    );
+
+    final restaurada = Alarma.decode(original.encode());
+
+    expect(restaurada.archivoSonido, original.archivoSonido);
+    expect(restaurada.fechaUnicaIso, original.fechaUnicaIso);
+  });
+
   test('corrige valores inválidos de sonido y volumen antiguos', () {
     final alarma = Alarma.fromMap({
       'id': 'alarma-antigua',
@@ -77,7 +92,7 @@ void main() {
   });
 
   test('ofrece sonidos completos y válidos para notificaciones iOS', () {
-    expect(Alarma.sonidos.length, 12);
+    expect(Alarma.sonidos.length, greaterThanOrEqualTo(100));
     for (final nombre in Alarma.sonidos.keys) {
       expect(nombre, matches(RegExp(r'^[a-z0-9]+$')));
     }

@@ -41,7 +41,7 @@ class ServicioAudio {
     if (_sonando) return;
     _sonando = true;
     final ajustes = ServicioAjustes.instancia;
-    final archivo = alarma.sonido;
+    final archivo = alarma.archivoSonido;
     try {
       await _player.setAudioContext(_contexto());
       await _player.setReleaseMode(ReleaseMode.loop);
@@ -49,8 +49,14 @@ class ServicioAudio {
       // si no, va a 1.0 de golpe. Nunca fuerza 1.0 antes de tocar.
       var nivelInicial = alarma.volumen * (ajustes.subirVolumen ? 0.5 : 1.0);
       await _player.setVolume(nivelInicial);
-      await _player.play(AssetSource('sounds/$archivo.wav'));
-      Registro.instancia.add('Audio: alarma sonando ($archivo, vol $nivelInicial)');
+      if (archivo == null) {
+        await _player.play(AssetSource('sounds/${alarma.sonido}.wav'));
+      } else {
+        await _player.play(DeviceFileSource(archivo));
+      }
+      Registro.instancia.add(
+        'Audio: alarma sonando (${archivo ?? alarma.sonido}, vol $nivelInicial)',
+      );
 
       if (ajustes.subirVolumen) {
         // Sube de 0.5 a 1.0 en ~7 s
@@ -113,13 +119,21 @@ class ServicioAudio {
   }
 
   /// Escucha de prueba desde Ajustes (no repite en bucle).
-  Future<void> probar(String archivo, {double volumen = 1.0}) async {
+  Future<void> probar(
+    String archivo, {
+    double volumen = 1.0,
+    String? ruta,
+  }) async {
     await parar();
     try {
       await _player.setAudioContext(_contexto());
       await _player.setReleaseMode(ReleaseMode.release);
       await _player.setVolume(volumen.clamp(0.0, 1.0));
-      await _player.play(AssetSource('sounds/$archivo.wav'));
+      if (ruta == null) {
+        await _player.play(AssetSource('sounds/$archivo.wav'));
+      } else {
+        await _player.play(DeviceFileSource(ruta));
+      }
       _previsualizando = true;
       Registro.instancia.add(
         'Audio: prueba $archivo (vol ${(volumen * 100).round()}%)',

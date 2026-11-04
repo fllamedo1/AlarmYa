@@ -1,4 +1,8 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
 
 import '../models/alarma.dart';
@@ -28,6 +32,7 @@ class _PantallaEdicionState extends State<PantallaEdicion> {
   late double _volumen;
   late Set<int> _dias;
   bool _probandoSonido = false;
+  String? _archivoSonido;
 
   @override
   void initState() {
@@ -43,6 +48,7 @@ class _PantallaEdicionState extends State<PantallaEdicion> {
     _permitirPosponer = a?.permitirPosponer ?? true;
     _sonido = a?.sonido ?? 'klaxon';
     _volumen = a?.volumen ?? 1.0;
+    _archivoSonido = a?.archivoSonido;
     _dias = Set<int>.from(a?.dias ?? <int>{});
   }
 
@@ -57,9 +63,16 @@ class _PantallaEdicionState extends State<PantallaEdicion> {
     if (_probandoSonido) {
       await ServicioAudio.instancia.detenerPrueba();
     } else {
-      await ServicioAudio.instancia.probar(_sonido, volumen: _volumen);
+      await ServicioAudio.instancia.probar(
+        _sonido,
+        volumen: _volumen,
+        ruta: _archivoSonido,
+      );
     }
-    if (mounted) setState(() => _probandoSonido = !_probandoSonido);
+    if (mounted) {
+      setState(() => _probandoSonido =
+          ServicioAudio.instancia.previsualizando);
+    }
   }
 
   Future<void> _elegirHora() async {
@@ -89,12 +102,46 @@ class _PantallaEdicionState extends State<PantallaEdicion> {
     a.permitirPosponer = _permitirPosponer;
     a.sonido = _sonido;
     a.volumen = _volumen;
+    a.archivoSonido = _archivoSonido;
     a.dias = Set<int>.from(_dias);
+    if (_dias.isEmpty) {
+      final ahora = DateTime.now();
+      var fecha = DateTime(ahora.year, ahora.month, ahora.day, _hora, _minuto);
+      if (!fecha.isAfter(ahora)) fecha = fecha.add(const Duration(days: 1));
+      a.fechaUnicaIso = fecha.toIso8601String();
+    } else {
+      a.fechaUnicaIso = null;
+    }
     // Guardar una alarma editada reactiva la ocurrencia elegida, incluso si
     // antes se había usado "Omitir próxima alarma".
     a.omitirHasta = null;
     a.activa = true;
     if (mounted) Navigator.of(context).pop(a);
+  }
+
+  Future<void> _elegirMusica() async {
+    try {
+      final resultado = await FilePicker.platform.pickFiles(
+        type: FileType.audio,
+        withData: false,
+      );
+      if (resultado == null || resultado.files.isEmpty) return;
+      final origen = resultado.files.single.path;
+      if (origen == null) return;
+      final directorio = await getApplicationDocumentsDirectory();
+      final extension = origen.contains('.') ? origen.split('.').last : 'm4a';
+      final destino = File(
+        '${directorio.path}/alarma_${DateTime.now().millisecondsSinceEpoch}.$extension',
+      );
+      await File(origen).copy(destino.path);
+      if (!mounted) return;
+      setState(() => _archivoSonido = destino.path);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No se pudo importar la música: $e')),
+      );
+    }
   }
 
   @override
@@ -350,6 +397,38 @@ class _PantallaEdicionState extends State<PantallaEdicion> {
                       if (v != null) setState(() => _sonido = v);
                     },
                   ),
+                  const SizedBox(height: 4),
+                  OutlinedButton.icon(
+                    icon: const Icon(Icons.library_music_outlined, size: 18),
+                    label: Text(
+                      _archivoSonido == null
+                          ? 'Elegir música del iPhone'
+                          : 'Cambiar música seleccionada',
+                    ),
+                    onPressed: _elegirMusica,
+                  ),
+                  if (_archivoSonido != null)
+                    Row(
+                      children: [
+                        const Icon(Icons.music_note, size: 16,
+                            color: Color(0xFFFFB300)),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            File(_archivoSonido!).uri.pathSegments.last,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF666666),
+                            ),
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () => setState(() => _archivoSonido = null),
+                          child: const Text('Quitar'),
+                        ),
+                      ],
+                    ),
                   Align(
                     alignment: Alignment.centerRight,
                     child: OutlinedButton.icon(
@@ -386,8 +465,9 @@ class _PantallaEdicionState extends State<PantallaEdicion> {
                   ),
                   Text(
                     'Probá el tono al volumen elegido. Durante una alarma activa '
-                    'se usa este nivel; con el iPhone bloqueado, iOS controla el '
-                    'volumen de la notificación.',
+                    'se usa este nivel. La música propia suena cuando la app '
+                    'abre la misión; con el iPhone bloqueado iOS usa el sonido '
+                    'de notificación incluido en la app.',
                     style: const TextStyle(
                       fontSize: 11.5,
                       color: Color(0xFF777777),

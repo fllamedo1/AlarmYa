@@ -136,6 +136,8 @@ class Alarma {
     this.permitirPosponer = true,
     this.sonido = 'klaxon',
     this.volumen = 1.0,
+    this.archivoSonido,
+    this.fechaUnicaIso,
     this.dias = const <int>{},
     this.omitirHastaIso,
   });
@@ -152,6 +154,8 @@ class Alarma {
   bool permitirPosponer;
   String sonido;
   double volumen;
+  String? archivoSonido;
+  String? fechaUnicaIso;
   /// Días de la semana en que se repite. 1 = lunes ... 7 = domingo.
   /// Vacío = alarma de una sola vez.
   Set<int> dias;
@@ -183,6 +187,8 @@ class Alarma {
         'permitirPosponer': permitirPosponer,
         'sonido': sonido,
         'volumen': volumen,
+        if (archivoSonido != null) 'archivoSonido': archivoSonido,
+        if (fechaUnicaIso != null) 'fechaUnica': fechaUnicaIso,
         'dias': dias.toList()..sort(),
         if (omitirHastaIso != null) 'omitirHasta': omitirHastaIso,
       };
@@ -212,6 +218,12 @@ class Alarma {
             ? m['sonido'] as String
             : 'klaxon',
         volumen: _doubleDe(m['volumen'], 1.0).clamp(0.1, 1.0).toDouble(),
+        archivoSonido: (m['archivoSonido'] ?? '').toString().isEmpty
+            ? null
+            : (m['archivoSonido'] ?? '').toString(),
+        fechaUnicaIso: (m['fechaUnica'] ?? '').toString().isEmpty
+            ? null
+            : (m['fechaUnica'] ?? '').toString(),
         omitirHastaIso: m['omitirHasta'] == null
             ? null
             : (m['omitirHasta'] as String),

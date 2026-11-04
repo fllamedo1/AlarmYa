@@ -49,13 +49,22 @@ class ServicioNotificaciones {
   Future<void> _posponerDesdeNotificacion(String idAlarma) async {
     // Elimina los reintentos de la alarma que acaba de sonar antes de
     // programar el nuevo aviso de snooze.
+    final alarmas = await Almacenamiento.instancia.cargar();
+    final alarma = _buscar(alarmas, idAlarma);
+    if (alarma != null && alarma.dias.isEmpty) {
+      alarma.activa = false;
+      await Almacenamiento.instancia.guardar(alarmas);
+    }
     await reprogramarDesdeGuardado();
     await programarSnooze(idAlarma);
   }
 
   NotificationDetails _detalles(Alarma alarma) => NotificationDetails(
         iOS: DarwinNotificationDetails(
-          sound: '${alarma.sonido}.wav',
+          // iOS solo acepta como sonido de notificación un recurso ya
+          // incluido en el bundle. La música importada se reproduce al abrir
+          // la misión; mientras el teléfono está bloqueado usamos el fallback.
+          sound: '${alarma.archivoSonido == null ? alarma.sonido : 'klaxon'}.wav',
           interruptionLevel: InterruptionLevel.timeSensitive,
           categoryIdentifier: _categoriaAlarma,
           presentAlert: true,
@@ -165,6 +174,10 @@ class ServicioNotificaciones {
         final retraso = tarde.inSeconds;
         Registro.instancia.add(
             'Vigilante: DISPARO alarma ${a.id} (retraso ${retraso}s)');
+        if (a.dias.isEmpty) {
+          a.activa = false;
+          await Almacenamiento.instancia.guardar(alarmas);
+        }
         // Re-arma las próximas ocurrencias (descarta la ya sonada).
         await reprogramar(alarmas);
         // Abrir la misión inmediatamente.
@@ -227,9 +240,14 @@ class ServicioNotificaciones {
     if (id.isEmpty) return;
     debugPrint('Notificación de alarma abierta: $id');
     // Registrar la misión antes del primer await evita perderla durante un
-    // arranque en frío: runApp puede consultar la pendiente mientras se
-    // cancelan y reprograman las notificaciones anteriores.
+    // arranque en frío.
     _misionPendiente = id;
+    final alarmas = await Almacenamiento.instancia.cargar();
+    final alarma = _buscar(alarmas, id);
+    if (alarma != null && alarma.dias.isEmpty) {
+      alarma.activa = false;
+      await Almacenamiento.instancia.guardar(alarmas);
+    }
     // Matamos los "bip" de reintento pendientes y dejamos armados los
     // disparos de las próximas semanas (para alarmas que se repiten).
     await reprogramarDesdeGuardado();
@@ -237,6 +255,13 @@ class ServicioNotificaciones {
       _misionPendiente = null;
       alAbrirMision?.call(id);
     }
+  }
+
+  Alarma? _buscar(List<Alarma> alarmas, String id) {
+    for (final alarma in alarmas) {
+      if (alarma.id == id) return alarma;
+    }
+    return null;
   }
 
   /// Id de alarma cuya misión quedó pendiente de abrir (arranque frío
@@ -261,6 +286,17 @@ class ServicioNotificaciones {
     final ahora = DateTime.now();
     var cambio = false;
     for (final a in alarmas) {
+      if (a.dias.isEmpty && a.activa) {
+        if (a.fechaUnicaIso == null) {
+          _fechaUnica(a);
+          cambio = true;
+        }
+        final fecha = _fechaUnica(a);
+        if (!fecha.isAfter(ahora)) {
+          a.activa = false;
+          cambio = true;
+        }
+      }
       if (a.omitirHasta != null && !a.omitirHasta!.isAfter(ahora)) {
         a.omitirHasta = null;
         cambio = true;
@@ -314,11 +350,8 @@ class ServicioNotificaciones {
     final cuerpo = 'Es hora de despertarte';
 
     if (a.dias.isEmpty) {
-      var fecha = tz.TZDateTime(
-          tz.local, ahora.year, ahora.month, ahora.day, a.hora, a.minuto);
-      if (!fecha.isAfter(ahora)) {
-        fecha = fecha.add(const Duration(days: 1));
-      }
+      final fechaUnica = _fechaUnica(a);
+      final fecha = tz.TZDateTime.from(fechaUnica, tz.local);
       await _notificar(
         id: _idBase(a.hashCode.abs(), 0),
         title: titulo,
@@ -344,6 +377,7 @@ class ServicioNotificaciones {
             (omitirL != null && !fecha.isAfter(omitirL))) {
           fecha = fecha.add(const Duration(days: 1));
         }
+
         await _notificar(
           id: _idBase(a.hashCode.abs(), dia),
           title: titulo,
@@ -356,6 +390,18 @@ class ServicioNotificaciones {
         await _programarReintentos(a, fecha, dia, titulo, cuerpo, payload);
       }
     }
+
+  }
+
+  DateTime _fechaUnica(Alarma a) {
+    final guardada =
+        a.fechaUnicaIso == null ? null : DateTime.tryParse(a.fechaUnicaIso!);
+    if (guardada != null) return guardada;
+    final ahora = DateTime.now();
+    var fecha = DateTime(ahora.year, ahora.month, ahora.day, a.hora, a.minuto);
+    if (!fecha.isAfter(ahora)) fecha = fecha.add(const Duration(days: 1));
+    a.fechaUnicaIso = fecha.toIso8601String();
+    return fecha;
   }
 
   Future<void> _notificar({
@@ -417,8 +463,11 @@ class ServicioNotificaciones {
     if (!a.activa) return null;
     final omitir = a.omitirHasta;
     if (a.dias.isEmpty) {
-      var f = DateTime(ahora.year, ahora.month, ahora.day, a.hora, a.minuto);
-      if (!f.isAfter(ahora)) f = f.add(const Duration(days: 1));
+      final f = a.fechaUnicaIso == null
+          ? DateTime(ahora.year, ahora.month, ahora.day, a.hora, a.minuto)
+          : DateTime.tryParse(a.fechaUnicaIso!);
+      if (f == null) return null;
+      if (!f.isAfter(ahora)) return null;
       if (omitir != null && !f.isAfter(omitir)) return null;
       return f;
     }
@@ -441,13 +490,16 @@ class ServicioNotificaciones {
   static DateTime? ocurrenciaEnCurso(Alarma a, DateTime ahora) {
     if (!a.activa) return null;
 
-    final fecha = DateTime(
-      ahora.year,
-      ahora.month,
-      ahora.day,
-      a.hora,
-      a.minuto,
-    );
+    final fecha = a.dias.isEmpty && a.fechaUnicaIso != null
+        ? DateTime.tryParse(a.fechaUnicaIso!)
+        : DateTime(
+            ahora.year,
+            ahora.month,
+            ahora.day,
+            a.hora,
+            a.minuto,
+          );
+    if (fecha == null) return null;
     if (ahora.isBefore(fecha)) return null;
     if (a.dias.isNotEmpty && !a.dias.contains(fecha.weekday)) return null;
     if (a.omitirHasta != null && !fecha.isAfter(a.omitirHasta!)) return null;

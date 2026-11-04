@@ -13,7 +13,7 @@ class ServicioAjustes {
 
   static const sonidos = Alarma.sonidos;
 
-  String sonido = 'klaxon';
+  String sonido = 'amanecer_suave';
   bool subirVolumen = true;
   bool reintentarBeep = true;
   int nReintentos = 10; // cada 30 s
@@ -27,7 +27,7 @@ class ServicioAjustes {
       final m = jsonDecode(bruto) as Map<String, dynamic>;
       final s = (m['sonido'] ?? '').toString();
       if (s == 'alarm') {
-        sonido = 'klaxon';
+        sonido = 'amanecer_suave';
       } else if (sonidos.containsKey(s)) {
         sonido = s;
       }

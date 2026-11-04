@@ -53,13 +53,13 @@ void main() {
       id: 'alarma-sonido',
       hora: 8,
       minuto: 15,
-      sonido: 'alarma_sirena_ia',
+      sonido: 'amanecer_suave',
       volumen: 0.4,
     );
 
     final restaurada = Alarma.decode(original.encode());
 
-    expect(restaurada.sonido, 'radar');
+    expect(restaurada.sonido, 'amanecer_suave');
     expect(restaurada.volumen, closeTo(0.4, 0.001));
   });
 
@@ -87,12 +87,12 @@ void main() {
       'volumen': 4,
     });
 
-    expect(alarma.sonido, 'klaxon');
+    expect(alarma.sonido, 'amanecer_suave');
     expect(alarma.volumen, 1.0);
   });
 
   test('ofrece sonidos completos y válidos para notificaciones iOS', () {
-    expect(Alarma.sonidos.length, 6);
+    expect(Alarma.sonidos.length, 4);
     expect(Alarma.sonidos.keys, isNot(contains('tono01')));
     for (final nombre in Alarma.sonidos.keys) {
       expect(nombre, matches(RegExp(r'^[a-z0-9_]+$')));

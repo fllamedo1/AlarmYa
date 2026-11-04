@@ -58,7 +58,7 @@ struct CrearAlarmaIntent: AppIntent {
       "cuentasMatematicas": 1,
       "sacudidas": 10,
       "permitirPosponer": true,
-      "sonido": "klaxon",
+      "sonido": "amanecer_suave",
       "volumen": 1.0,
       "dias": [],
     ]
@@ -79,7 +79,7 @@ struct CrearAlarmaIntent: AppIntent {
     let content = UNMutableNotificationContent()
     content.title = "⏰ \(alarmName)"
     content.body = "Es hora de despertarte"
-    content.sound = UNNotificationSound(named: UNNotificationSoundName("klaxon.wav"))
+    content.sound = nil
 
     var components = DateComponents()
     components.hour = hour

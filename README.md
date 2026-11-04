@@ -1,18 +1,18 @@
 # AlarmIA
 
-Copia de alarma tipo Alarmy para iPhone, construida con Flutter. La biblioteca incluida usa sonidos de alarma generados por IA/procedurales publicados por SFXMint bajo CC0 1.0.
+Copia de alarma tipo Alarmy para iPhone, construida con Flutter. La biblioteca incluida usa chimes suaves generados por IA y publicados bajo CC BY 4.0.
 
 ## Qué hace
 
 - Lista de alarmas con nombre, hora y días de repetición (Lun–Dom) o una sola vez.
 - **Notificaciones locales de iOS**: la alarma suena con la app cerrada, pantalla bloqueada y modo avión.
-- Sonido de notificación "urgente" (nivel *Time Sensitive*: el usuario puede permitir que atraviese el modo No Molestar).
+- Sonido de notificación predeterminado de iOS (nivel *Time Sensitive*: el usuario puede permitir que atraviese el modo No Molestar).
 - Al tocar la notificación se abre la **misión** a pantalla completa con tono en bucle loud (`AVAudioSession playback`), y solo se detiene al completarla:
   - **Botón**: detener directo (sin dificultad).
   - **Matemática**: 3 dificultades (fácil / media / difícil), cuenta nueva si fallás.
   - **Sacudir**: acelerómetro en vivo, 5–40 sacudidas configurables.
-- Biblioteca de sonidos de alarma realistas: sirenas, campana y reloj generados por IA/procedurales, sin los tonos polifónicos anteriores.
-- La música propia importada desde Archivos se reproduce dentro de la app; las notificaciones con el iPhone bloqueado usan siempre `despertador.wav`, un WAV corto incluido en el bundle iOS y compatible con el sistema de notificaciones. El sonido elegido se reproduce al abrir la misión.
+- Biblioteca de sonidos agradables: chimes suaves, campana melosa y cuenco zen; se eliminaron las sirenas y alarmas agresivas.
+- La música propia importada desde Archivos se reproduce dentro de la app. Con la pantalla bloqueada, la notificación usa el sonido nativo de iOS y el sonido elegido se reproduce al abrir la misión.
 
 ## Limitaciones honestas (iOS)
 
@@ -70,15 +70,14 @@ Sin esa rutina, iOS borra o desactiva la app al vencer el perfil. Con una cuenta
 
 ## Biblioteca de sonidos
 
-Los sonidos incluidos son recursos CC0 1.0 de SFXMint. Se descargaron como WAV PCM y se registran también en `ios/Runner/` para que las notificaciones locales puedan reproducirlos con la pantalla bloqueada:
+Los sonidos incluidos son WAV de BudgetPixel AI bajo CC BY 4.0. La atribución requerida se conserva aquí:
 
-- `alarma_sirena_ia.wav` — nuclear alarm 08 — SHA-256 `EE7B7A7ECAC20F8A52E4A82A79C38B0941EAAB12792AFCBCCD1B9A371BA1E29A`
-- `alarma_reloj_ia.wav` — office alarm clock 17 — SHA-256 `5EA281DDE7D80B2C77E0EE7E0E75B85BC65648FD519E0C8260842D619FC1E11A`
-- `alarma_campana_ia.wav` — bell toll 10 — SHA-256 `597CFCF954373832531C5CE78679820F555612DEB94D93935BC32EA657A2ED4E`
-- `alarma_sirena_urbana_ia.wav` — burglar alarm 10 — SHA-256 `699018B97F6D7836ED27523DC0E563A791280DBF01DBC4A231AC494BEE68E262`
-- `alarma_auto_ia.wav` — car alarm 04 — SHA-256 `A79D7F138DE47BE4B36ECEDA748A09401A347CF3A8C0611455D58C72684BF0D3`
+- `amanecer_suave.wav` — “Gentle Sunrise Chime” by BudgetPixel AI (https://budgetpixel.com/sfx/gentle-sunrise-chime-fe0f0c25)
+- `despertar_luminoso.wav` — “Gentle Wake Chime” by BudgetPixel AI (https://budgetpixel.com/sfx/gentle-wake-chime-50ef68cd)
+- `campana_melosa.wav` — “Mellow Reminder Bell” by BudgetPixel AI (https://budgetpixel.com/sfx/mellow-reminder-bell-a1cf54de)
+- `cuenco_zen.wav` — “Zen Singing Bowl Tap” by BudgetPixel AI (https://budgetpixel.com/sfx/zen-singing-bowl-tap-6ff5a8d5)
 
-Fuente y licencia: https://sfxmint.com/ y https://github.com/sfxmint/sfxmint-mcp. CC0 1.0 permite redistribución y uso comercial sin atribución obligatoria. Se conserva el nombre descriptivo en el catálogo para no confundir estos SFX con canciones completas.
+Son clips cortos pensados para repetirse en la misión, no sirenas de emergencia ni tonos estridentes.
 
 ## Cambiar el tono de alarma
 

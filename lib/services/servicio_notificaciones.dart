@@ -45,8 +45,6 @@ class ServicioNotificaciones {
   // primeras versiones. Se usa siempre para la notificación bloqueada:
   // iOS no permite depender de una ruta importada y algunos dispositivos
   // rechazan ciertos WAV personalizados aunque sean reproducibles en Flutter.
-  static const _sonidoBloqueado = 'despertador';
-
   /// Callback que la app registra; se invoca con el id de la alarma cuando
   /// toca dispararla (notificación tocada o vigilante).
   void Function(String idAlarma)? alAbrirMision;
@@ -66,11 +64,9 @@ class ServicioNotificaciones {
 
   NotificationDetails _detalles() => NotificationDetails(
         iOS: DarwinNotificationDetails(
-          // iOS solo acepta como sonido de notificación un recurso ya
-          // incluido en el bundle. Usamos siempre el WAV mono conocido para
-          // que la alarma siga sonando aunque el sonido elegido sea importado
-          // o un formato que iOS no acepte en una notificación bloqueada.
-          sound: '$_sonidoBloqueado.wav',
+          // null usa el sonido nativo de iOS. Es más fiable que un WAV
+          // personalizado para una alerta programada con la pantalla bloqueada.
+          sound: null,
           interruptionLevel: InterruptionLevel.timeSensitive,
           categoryIdentifier: _categoriaAlarma,
           presentAlert: true,
@@ -444,9 +440,13 @@ class ServicioNotificaciones {
     String payload,
   ) async {
     final ajustes = ServicioAjustes.instancia;
-    if (!ajustes.reintentarBeep) return;
+    // iOS conserva como máximo 64 notificaciones pendientes. Programar
+    // reintentos para cada día de una alarma semanal puede superar ese
+    // límite y hacer que iOS descarte la notificación principal.
+    if (!ajustes.reintentarBeep || a.dias.isNotEmpty) return;
 
-    for (var n = 1; n <= ajustes.nReintentos; n++) {
+    final cantidad = ajustes.nReintentos.clamp(0, 3);
+    for (var n = 1; n <= cantidad; n++) {
       final fecha = fechaBase.add(const Duration(seconds: _reintentoCadaSec) * n);
       await _notificar(
         id: _idReintento(a.hashCode.abs(), dia, n),

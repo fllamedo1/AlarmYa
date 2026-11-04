@@ -46,7 +46,7 @@ class _PantallaEdicionState extends State<PantallaEdicion> {
     _cuentasMatematicas = a?.cuentasMatematicas ?? 1;
     _sacudidas = a?.sacudidasRequeridas ?? 10;
     _permitirPosponer = a?.permitirPosponer ?? true;
-    _sonido = a?.sonido ?? 'klaxon';
+    _sonido = a?.sonido ?? 'amanecer_suave';
     _volumen = a?.volumen ?? 1.0;
     _archivoSonido = a?.archivoSonido;
     _dias = Set<int>.from(a?.dias ?? <int>{});

@@ -21,12 +21,10 @@ class Alarma {
   ];
 
   static const sonidos = <String, String>{
-    'klaxon': 'Impacto incluido',
-    'alarma_sirena_ia': 'Sirena IA ascendente',
-    'alarma_reloj_ia': 'Reloj IA realista',
-    'alarma_campana_ia': 'Campana IA profunda',
-    'alarma_sirena_urbana_ia': 'Sirena urbana IA',
-    'alarma_auto_ia': 'Alarma de auto IA',
+    'amanecer_suave': 'Amanecer suave',
+    'despertar_luminoso': 'Despertar luminoso',
+    'campana_melosa': 'Campana melosa',
+    'cuenco_zen': 'Cuenco zen',
   };
 
   Alarma({
@@ -40,7 +38,7 @@ class Alarma {
     this.cuentasMatematicas = 1,
     this.sacudidasRequeridas = 10,
     this.permitirPosponer = true,
-    this.sonido = 'klaxon',
+    this.sonido = 'amanecer_suave',
     this.volumen = 1.0,
     this.archivoSonido,
     this.fechaUnicaIso,
@@ -122,7 +120,7 @@ class Alarma {
             : true,
         sonido: sonidos.containsKey(m['sonido'])
             ? m['sonido'] as String
-            : 'klaxon',
+            : 'amanecer_suave',
         volumen: _doubleDe(m['volumen'], 1.0).clamp(0.1, 1.0).toDouble(),
         archivoSonido: (m['archivoSonido'] ?? '').toString().isEmpty
             ? null

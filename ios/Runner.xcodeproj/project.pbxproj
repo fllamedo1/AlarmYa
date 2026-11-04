@@ -17,11 +17,10 @@
 		97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FD1CF9000F007C117D /* Assets.xcassets */; };
 		97C147011CF9000F007C117D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */; };
 		1A2B3C4D5E6F7A8B9C0D1101 /* klaxon.wav in Resources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F7A8B9C0D1102 /* klaxon.wav */; };
-		1A2B3C4D5E6F7A8B9C0D3001 /* alarma_sirena_ia.wav in Resources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F7A8B9C0D3002 /* alarma_sirena_ia.wav */; };
-		1A2B3C4D5E6F7A8B9C0D3003 /* alarma_reloj_ia.wav in Resources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F7A8B9C0D3004 /* alarma_reloj_ia.wav */; };
-		1A2B3C4D5E6F7A8B9C0D3005 /* alarma_campana_ia.wav in Resources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F7A8B9C0D3006 /* alarma_campana_ia.wav */; };
-		1A2B3C4D5E6F7A8B9C0D3007 /* alarma_sirena_urbana_ia.wav in Resources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F7A8B9C0D3008 /* alarma_sirena_urbana_ia.wav */; };
-		1A2B3C4D5E6F7A8B9C0D3009 /* alarma_auto_ia.wav in Resources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F7A8B9C0D300A /* alarma_auto_ia.wav */; };
+		1A2B3C4D5E6F7A8B9C0D4001 /* amanecer_suave.wav in Resources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F7A8B9C0D4002 /* amanecer_suave.wav */; };
+		1A2B3C4D5E6F7A8B9C0D4003 /* despertar_luminoso.wav in Resources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F7A8B9C0D4004 /* despertar_luminoso.wav */; };
+		1A2B3C4D5E6F7A8B9C0D4005 /* campana_melosa.wav in Resources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F7A8B9C0D4006 /* campana_melosa.wav */; };
+		1A2B3C4D5E6F7A8B9C0D4007 /* cuenco_zen.wav in Resources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F7A8B9C0D4008 /* cuenco_zen.wav */; };
 		1A2B3C4D5E6F7A8B9C0D1103 /* campana.wav in Resources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F7A8B9C0D1104 /* campana.wav */; };
 		1A2B3C4D5E6F7A8B9C0D1105 /* beep.wav in Resources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F7A8B9C0D1106 /* beep.wav */; };
 		1A2B3C4D5E6F7A8B9C0D1107 /* radar.wav in Resources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F7A8B9C0D1108 /* radar.wav */; };
@@ -77,11 +76,10 @@
 		97C147001CF9000F007C117D /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		97C147021CF9000F007C117D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		1A2B3C4D5E6F7A8B9C0D1102 /* klaxon.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = klaxon.wav; sourceTree = "<group>"; };
-		1A2B3C4D5E6F7A8B9C0D3002 /* alarma_sirena_ia.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = alarma_sirena_ia.wav; sourceTree = "<group>"; };
-		1A2B3C4D5E6F7A8B9C0D3004 /* alarma_reloj_ia.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = alarma_reloj_ia.wav; sourceTree = "<group>"; };
-		1A2B3C4D5E6F7A8B9C0D3006 /* alarma_campana_ia.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = alarma_campana_ia.wav; sourceTree = "<group>"; };
-		1A2B3C4D5E6F7A8B9C0D3008 /* alarma_sirena_urbana_ia.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = alarma_sirena_urbana_ia.wav; sourceTree = "<group>"; };
-		1A2B3C4D5E6F7A8B9C0D300A /* alarma_auto_ia.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = alarma_auto_ia.wav; sourceTree = "<group>"; };
+		1A2B3C4D5E6F7A8B9C0D4002 /* amanecer_suave.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = amanecer_suave.wav; sourceTree = "<group>"; };
+		1A2B3C4D5E6F7A8B9C0D4004 /* despertar_luminoso.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = despertar_luminoso.wav; sourceTree = "<group>"; };
+		1A2B3C4D5E6F7A8B9C0D4006 /* campana_melosa.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = campana_melosa.wav; sourceTree = "<group>"; };
+		1A2B3C4D5E6F7A8B9C0D4008 /* cuenco_zen.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = cuenco_zen.wav; sourceTree = "<group>"; };
 		1A2B3C4D5E6F7A8B9C0D1104 /* campana.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = campana.wav; sourceTree = "<group>"; };
 		1A2B3C4D5E6F7A8B9C0D1106 /* beep.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = beep.wav; sourceTree = "<group>"; };
 		1A2B3C4D5E6F7A8B9C0D1108 /* radar.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = radar.wav; sourceTree = "<group>"; };
@@ -159,11 +157,10 @@
 				7884E8672EC3CC0400C636F2 /* SceneDelegate.swift */,
 				74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */,
 				1A2B3C4D5E6F7A8B9C0D1102 /* klaxon.wav */,
-				1A2B3C4D5E6F7A8B9C0D3002 /* alarma_sirena_ia.wav */,
-				1A2B3C4D5E6F7A8B9C0D3004 /* alarma_reloj_ia.wav */,
-				1A2B3C4D5E6F7A8B9C0D3006 /* alarma_campana_ia.wav */,
-				1A2B3C4D5E6F7A8B9C0D3008 /* alarma_sirena_urbana_ia.wav */,
-				1A2B3C4D5E6F7A8B9C0D300A /* alarma_auto_ia.wav */,
+				1A2B3C4D5E6F7A8B9C0D4002 /* amanecer_suave.wav */,
+				1A2B3C4D5E6F7A8B9C0D4004 /* despertar_luminoso.wav */,
+				1A2B3C4D5E6F7A8B9C0D4006 /* campana_melosa.wav */,
+				1A2B3C4D5E6F7A8B9C0D4008 /* cuenco_zen.wav */,
 				1A2B3C4D5E6F7A8B9C0D1104 /* campana.wav */,
 				1A2B3C4D5E6F7A8B9C0D1106 /* beep.wav */,
 				1A2B3C4D5E6F7A8B9C0D1108 /* radar.wav */,
@@ -281,11 +278,10 @@
 				97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */,
 				97C146FC1CF9000F007C117D /* Main.storyboard in Resources */,
 				1A2B3C4D5E6F7A8B9C0D1101 /* klaxon.wav in Resources */,
-				1A2B3C4D5E6F7A8B9C0D3001 /* alarma_sirena_ia.wav in Resources */,
-				1A2B3C4D5E6F7A8B9C0D3003 /* alarma_reloj_ia.wav in Resources */,
-				1A2B3C4D5E6F7A8B9C0D3005 /* alarma_campana_ia.wav in Resources */,
-				1A2B3C4D5E6F7A8B9C0D3007 /* alarma_sirena_urbana_ia.wav in Resources */,
-				1A2B3C4D5E6F7A8B9C0D3009 /* alarma_auto_ia.wav in Resources */,
+				1A2B3C4D5E6F7A8B9C0D4001 /* amanecer_suave.wav in Resources */,
+				1A2B3C4D5E6F7A8B9C0D4003 /* despertar_luminoso.wav in Resources */,
+				1A2B3C4D5E6F7A8B9C0D4005 /* campana_melosa.wav in Resources */,
+				1A2B3C4D5E6F7A8B9C0D4007 /* cuenco_zen.wav in Resources */,
 				1A2B3C4D5E6F7A8B9C0D1103 /* campana.wav in Resources */,
 				1A2B3C4D5E6F7A8B9C0D1105 /* beep.wav in Resources */,
 				1A2B3C4D5E6F7A8B9C0D1107 /* radar.wav in Resources */,

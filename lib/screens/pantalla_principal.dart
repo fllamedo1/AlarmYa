@@ -271,19 +271,19 @@ class _TarjetaAlarma extends StatelessWidget {
                           fontSize: 13,
                           color: Color(0xFF888888),
                         ),
-                        if (proxima != null)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 5),
-                            child: Text(
-                              'Suena ${_cuentaAtras(proxima, ahora)}',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFFE5A100),
-                              ),
+                      ),
+                      if (proxima != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 5),
+                          child: Text(
+                            'Suena ${_cuentaAtras(proxima, ahora)}',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFFE5A100),
                             ),
                           ),
-                      ),
+                        ),
                       const SizedBox(height: 10),
                       Row(
                         children: [
